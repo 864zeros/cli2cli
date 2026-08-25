@@ -181,6 +181,24 @@
       </div>
     </div>
 
+    <div class="section">
+      <div class="sec-label">Capabilities under the hood</div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Capability</th><th>What it enables</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Raw-keystroke control</strong></td><td>Send raw bytes — arrow keys, <code>Ctrl</code>/<code>ESC</code>, menu navigation — so you can pilot a <em>full-screen TUI</em>, not just answer line prompts.</td></tr>
+            <tr><td><strong>Per-session working directory</strong></td><td>Every session runs in its own <code>cwd</code> — fan a fleet across different repos/dirs at once for true parallel multi-repo work.</td></tr>
+            <tr><td><strong>Any executable, not just AI CLIs</strong></td><td><code>custom</code> runs any binary + args — <code>docker</code>, <code>psql</code>, <code>ssh</code>, <code>git</code>, <code>kubectl</code> — the whole toolchain becomes drivable and connectable.</td></tr>
+            <tr><td><strong>Live fleet telemetry</strong></td><td><code>list</code> reports each session's uptime and running / waiting / exited / exit-code — real observability for a running swarm of agents.</td></tr>
+            <tr><td><strong>Safe environment inheritance</strong></td><td>Sessions inherit your real environment (auth, <code>PATH</code>) with obvious placeholder secrets auto-scrubbed — agents run with the context they'd have if you launched them yourself.</td></tr>
+            <tr><td><strong>Machine-clean I/O</strong></td><td>Structured JSON on every call, an explicit error envelope, captured exit codes, and writes to a dead session rejected — built to be driven by code, not just chat.</td></tr>
+            <tr><td><strong>True 256-color PTY (120×40)</strong></td><td>Real xterm terminal emulation, so colored output and full-screen interfaces render and behave correctly.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="section" id="how-it-works">
       <div class="sec-label">How it works</div>
       <div class="card mb-16">
@@ -230,6 +248,7 @@
           </ul>
         </div>
       </div>
+      <div class="box amber mt-12"><strong>What it deliberately doesn't do (and why that's fine):</strong> sessions live in memory, so they don't survive a server restart; it's poll-based, not server-push; there's no built-in auth or CPU/time caps (the host controls access; output is buffer-capped at 200k); and cross-session <em>routing</em> is the orchestration layer's job, not the substrate's. Scope <em>is</em> the feature — a small, clean primitive is exactly what makes it trustworthy to build a stack on.</div>
     </div>
 
   </div><!-- /aud-all -->
