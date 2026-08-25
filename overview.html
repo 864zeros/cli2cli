@@ -105,16 +105,16 @@
 </div>
 
 <div class="hero">
-  <div class="hero-eyebrow">MCP Server &nbsp;·&nbsp; Interactive CLI Driver &nbsp;·&nbsp; Key-free</div>
-  <h1>Give your AI hands for the CLIs that hang.<br><span>cli2cli-mcp</span></h1>
-  <p class="hero-sub">Interactive command-line tools stop and wait for a human — a <code>(y/n)</code>, an arrow-key menu, a setup wizard, a login. An AI's built-in shell can't answer those, so it just hangs. cli2cli-mcp runs any CLI inside a real terminal and exposes five tools, so your assistant can spawn it, read its prompts, and type the answers — driving <code>claude</code>, <code>gemini</code>, an installer, <code>git rebase -i</code>, an <code>ssh</code> session, anything.</p>
+  <div class="hero-eyebrow">MCP Server &nbsp;·&nbsp; Multi-Agent CLI Orchestration &nbsp;·&nbsp; Local-First &nbsp;·&nbsp; Key-free</div>
+  <h1>Turn Claude, Gemini, and every CLI into one coordinated agent fabric.<br><span>cli2cli-mcp</span></h1>
+  <p class="hero-sub">cli2cli-mcp makes each command-line tool — including the most capable AI coding agents — a live, addressable session you can drive over MCP: run many at once, route one agent's output into another's input, issue directives, and compose cross-CLI agent flows. The industry orchestrates model <em>API calls</em>; cli2cli-mcp orchestrates the real <strong>CLIs themselves</strong> — full local context, on hardware you own.</p>
   <div class="hero-meta">
     <div class="meta-pill"><span class="lbl">Package</span><span class="val">@864zeros/cli2cli-mcp</span></div>
     <div class="meta-pill"><span class="lbl">Version</span><span class="val">0.1</span></div>
-    <div class="meta-pill"><span class="lbl">Status</span><span class="val green">Live · smoke-verified</span></div>
-    <div class="meta-pill"><span class="lbl">Transport</span><span class="val">stdio (MCP)</span></div>
-    <div class="meta-pill"><span class="lbl">Tools</span><span class="val">5</span></div>
-    <div class="meta-pill"><span class="lbl">API keys</span><span class="val green">none required</span></div>
+    <div class="meta-pill"><span class="lbl">Status</span><span class="val green">Live · verified</span></div>
+    <div class="meta-pill"><span class="lbl">Concurrency</span><span class="val">multi-session</span></div>
+    <div class="meta-pill"><span class="lbl">Drives</span><span class="val">any CLI · built to orchestrate</span></div>
+    <div class="meta-pill"><span class="lbl">API keys</span><span class="val green">none — host is the LLM</span></div>
   </div>
 </div>
 
@@ -131,9 +131,9 @@
   <div id="aud-all" class="aud-section visible">
 
     <div class="stats" style="margin-top:8px">
-      <div class="stat"><div class="stat-num">5</div><div class="stat-lbl">MCP tools</div></div>
-      <div class="stat"><div class="stat-num">4</div><div class="stat-lbl">Built-in CLI presets</div></div>
-      <div class="stat"><div class="stat-num">1</div><div class="stat-lbl">Source file</div></div>
+      <div class="stat"><div class="stat-num">5</div><div class="stat-lbl">Orchestration tools</div></div>
+      <div class="stat"><div class="stat-num">Multi</div><div class="stat-lbl">Concurrent CLI agents</div></div>
+      <div class="stat"><div class="stat-num">Any</div><div class="stat-lbl">CLI · claude / gemini / shell / custom</div></div>
       <div class="stat"><div class="stat-num green">0</div><div class="stat-lbl">API keys</div></div>
     </div>
 
@@ -141,28 +141,28 @@
       <div class="sec-label">What it does</div>
       <div class="grid-2">
         <div>
-          <h2 class="mb-12">Turns interactive CLIs into tools an AI can drive.</h2>
-          <p>A model's built-in shell tool can run <code>ls</code> — but the moment a program asks a question (<code>Proceed? (y/n)</code>, an arrow menu, a wizard, a password), it stalls, because there's nobody at the keyboard to answer.</p>
-          <p>cli2cli-mcp launches the program inside a real pseudo-terminal (ConPTY on Windows) and exposes five simple tools. Now the assistant can <strong>spawn</strong> it, <strong>read</strong> its output, notice it's waiting, <strong>write</strong> the answer, and repeat — supervising a live, interactive session end-to-end.</p>
-          <p>It's <strong>key-free</strong>: this is an MCP server, so the intelligence lives on the host session that connects to it. cli2cli-mcp is just the terminal driver — no API key, no <code>.env</code>, no model calls of its own.</p>
+          <h2 class="mb-12">The connective tissue for multi-agent CLI orchestration.</h2>
+          <p>Command-line tools — including the most capable AI coding agents — are islands. Each runs alone, each needs a human to drive it, and there is no native way to make two of them work together.</p>
+          <p>cli2cli-mcp changes the unit of work from <em>"one CLI, one human"</em> to <em>"many CLIs, one program."</em> Every tool becomes a persistent, <strong>addressable session</strong>. Read any session's output, write to any session's input, run as many as you want in parallel — the primitives that let a host or an orchestrator route work <strong>between</strong> Claude, Gemini, and shell as a single coordinated system.</p>
+          <p>It's <strong>key-free and local-first</strong>: the intelligence lives on the MCP host that connects to it; cli2cli-mcp holds no credentials and calls no model. It does one thing supremely well — make CLIs drivable and connectable — and is deliberately <strong>built to be orchestrated.</strong></p>
         </div>
         <div>
           <div class="card card-accent-red mb-16">
-            <h3 class="mb-8">Before: interactive = blocked</h3>
+            <h3 class="mb-8">Before: isolated tools</h3>
             <ul class="check">
-              <li class="x">The AI's shell hangs on any prompt</li>
-              <li class="x">Wizards / menus / logins can't be automated</li>
-              <li class="x">Confirmations need a human at the terminal</li>
-              <li class="x">No way to feed answers to a running CLI</li>
+              <li class="x">Every CLI runs alone, blind to the others</li>
+              <li class="x">A human has to sit and drive each one</li>
+              <li class="x">No way to pipe one agent into another</li>
+              <li class="x">One tool, one session, one task at a time</li>
             </ul>
           </div>
           <div class="card card-accent-green">
-            <h3 class="mb-8">After: spawn → read → write</h3>
+            <h3 class="mb-8">After: a coordinated fabric</h3>
             <ul class="check">
-              <li>Any interactive CLI runs in a real PTY</li>
-              <li>The assistant reads prompts and types answers</li>
-              <li>Confirmations, menus, logins — all drivable</li>
-              <li>One MCP server any host can register</li>
+              <li>Every CLI is a live, addressable agent</li>
+              <li>Run a fleet of them in parallel</li>
+              <li>Route one agent's output into another's input</li>
+              <li>Compose cross-CLI directives &amp; agent flows</li>
             </ul>
           </div>
         </div>
@@ -170,42 +170,40 @@
     </div>
 
     <div class="section">
-      <div class="sec-label">What you can do with it</div>
+      <div class="sec-label">What it unlocks</div>
       <div class="grid-3">
-        <div class="role-card"><div class="role-icon blue">🧙</div><div class="role-body"><h4>Drive wizards</h4><p>Run interactive setup flows (<code>npm create</code>, installers, scaffolders) and have the assistant answer each step.</p></div></div>
-        <div class="role-card"><div class="role-icon green">✅</div><div class="role-body"><h4>Answer confirmations</h4><p><code>git rebase -i</code>, a destructive <code>rm</code>, a DB migration asking <code>(y/n)</code> — the assistant reads the prompt and responds.</p></div></div>
-        <div class="role-card"><div class="role-icon amber">👀</div><div class="role-body"><h4>Supervise long runs</h4><p>Poll the stream, watch for an interactive pause, decide, and feed input — without blocking on a human.</p></div></div>
-        <div class="role-card"><div class="role-icon blue">🧵</div><div class="role-body"><h4>Run many sessions</h4><p>Each spawn is its own terminal with a <code>session_id</code>; list them, drive them independently, tear them down.</p></div></div>
-        <div class="role-card"><div class="role-icon green">🤖</div><div class="role-body"><h4>Drive other AI CLIs</h4><p>Presets for <code>claude</code> and <code>gemini</code> make other coding CLIs into tools your host session can invoke.</p></div></div>
-        <div class="role-card"><div class="role-icon amber">🔌</div><div class="role-body"><h4>Plug into any MCP host</h4><p>Register it in Claude Code, Cursor, or Claude Desktop with one line — no service, no key.</p></div></div>
+        <div class="role-card"><div class="role-icon blue">🔗</div><div class="role-body"><h4>Connect multiple CLIs</h4><p>Run Claude, Gemini, and shell together as one system — each a named session addressable by <code>session_id</code>.</p></div></div>
+        <div class="role-card"><div class="role-icon green">🔀</div><div class="role-body"><h4>Cross-CLI communication</h4><p>Read one session's output and write it into another's input — one agent's result becomes the next agent's directive.</p></div></div>
+        <div class="role-card"><div class="role-icon amber">🎯</div><div class="role-body"><h4>Issue directives to agents</h4><p>Steer a running AI CLI live: feed follow-ups, answers, and corrections mid-session instead of one-shot calls.</p></div></div>
+        <div class="role-card"><div class="role-icon blue">🧵</div><div class="role-body"><h4>Run a fleet in parallel</h4><p>Spawn many sessions at once; enumerate and drive each independently — the basis for fan-out and multi-agent work.</p></div></div>
+        <div class="role-card"><div class="role-icon green">🧩</div><div class="role-body"><h4>Built to be orchestrated</h4><p>Clean primitives an engine composes into agent flows, pipelines, and gated workflows — the substrate under the stack.</p></div></div>
+        <div class="role-card"><div class="role-icon amber">⌨️</div><div class="role-body"><h4>Drive tools that used to hang</h4><p>Because it feeds stdin to a real PTY, it also answers the wizards, menus, and <code>(y/n)</code> prompts that block other tools — table stakes, included.</p></div></div>
       </div>
     </div>
 
     <div class="section" id="how-it-works">
       <div class="sec-label">How it works</div>
       <div class="card mb-16">
-        <h3 class="mb-16">The loop — a supervised interactive session</h3>
+        <h3 class="mb-16">Addressable sessions — an orchestrator routing between CLI agents</h3>
         <div class="flow mb-16">
-          <div class="flow-node">spawn<br><small style="font-weight:400;font-size:11px">launch in a PTY</small></div>
+          <div class="flow-node grey">host / orchestrator<br><small style="font-weight:400;font-size:11px">the intelligence</small></div>
           <div class="flow-arr">→</div>
-          <div class="flow-node grey">read<br><small style="font-weight:400;font-size:11px">see output + prompt</small></div>
-          <div class="flow-arr">→</div>
-          <div class="flow-node">write<br><small style="font-weight:400;font-size:11px">type the answer</small></div>
-          <div class="flow-arr">↺</div>
-          <div class="flow-node grey">read<br><small style="font-weight:400;font-size:11px">until it exits</small></div>
-          <div class="flow-arr">→</div>
-          <div class="flow-node green">terminate<br><small style="font-weight:400;font-size:11px">free the session</small></div>
+          <div class="flow-node">session A<br><small style="font-weight:400;font-size:11px">claude · plan</small></div>
+          <div class="flow-arr">⇒</div>
+          <div class="flow-node">session B<br><small style="font-weight:400;font-size:11px">gemini · review</small></div>
+          <div class="flow-arr">⇒</div>
+          <div class="flow-node green">session C<br><small style="font-weight:400;font-size:11px">shell · apply</small></div>
         </div>
-        <p style="font-size:13px;color:var(--n-500)"><code>read_cli_stream</code> also returns an <code>is_waiting_for_input</code> flag — a heuristic that spots confirmation prompts (<code>(y/n)</code>, "approve", "overwrite", menu selectors) so the caller knows when a decision is needed rather than polling blindly.</p>
+        <p style="font-size:13px;color:var(--n-500)">Each box is a persistent PTY session with its own <code>session_id</code>. The host <code>spawn</code>s them, <code>read</code>s each one's output, and <code>write</code>s the next directive — so A's result flows into B, B's into C. cli2cli-mcp provides the wiring; the routing logic lives on the host (or a thin orchestration layer above it).</p>
       </div>
       <div class="grid-2">
         <div class="card">
-          <h3 class="mb-8">Why a real pseudo-terminal</h3>
-          <p>Interactive CLIs behave differently when they think they're talking to a terminal (colors, cursor control, prompts) versus a pipe. cli2cli-mcp uses <code>node-pty</code> — Windows <strong>ConPTY</strong> — so programs run exactly as they would for a human, and stdin injection actually reaches them. It also runs on POSIX.</p>
+          <h3 class="mb-8">Processes, not API calls — the wedge</h3>
+          <p>Every agent framework today orchestrates <strong>model API calls</strong>. cli2cli-mcp orchestrates the <strong>real CLIs</strong> — the actual <code>claude</code> / <code>gemini</code> binaries and any shell tool, with full local files, credentials, and context, on a machine you own. That's a different and more defensible category: multi-agent orchestration at the process level, local-first.</p>
         </div>
         <div class="card">
-          <h3 class="mb-8">Why key-free is the point</h3>
-          <p>Because it's an MCP server, the LLM is the <strong>client</strong> — the session that connects to it. cli2cli-mcp never calls a model. It carries no credentials, ships no <code>.env</code>, and adds no per-call cost. It does exactly one job — drive terminals — and stays a clean, generic substrate.</p>
+          <h3 class="mb-8">Why a real pseudo-terminal</h3>
+          <p>CLIs behave differently for a terminal than a pipe (colors, cursor control, prompts). cli2cli-mcp uses <code>node-pty</code> — Windows <strong>ConPTY</strong> — so agents run exactly as they would for a human and stdin injection actually reaches them. Sessions are held open and independently addressable, which is what makes cross-CLI coordination possible.</p>
         </div>
       </div>
     </div>
@@ -216,19 +214,19 @@
         <div class="card card-accent-green">
           <h3 class="mb-8">What's proven</h3>
           <ul class="check">
-            <li>Smoke test: real ConPTY round-trip (spawn a shell, drive it, read output, exit 0)</li>
+            <li>Real ConPTY round-trip (spawn, drive, read, clean exit) — smoke-verified</li>
             <li>Driven live by Claude Code as a registered MCP server</li>
-            <li>Used as the execution substrate under a separate workflow engine</li>
-            <li>Extracted to its own repo; smoke-passes standalone</li>
+            <li>Powers a real multi-CLI workflow: two Claude sessions coordinated with a gate, output routed between them</li>
+            <li>Extracted to its own repo; runs standalone</li>
           </ul>
         </div>
         <div class="card card-accent-red">
-          <h3 class="mb-8">Be clear-eyed</h3>
+          <h3 class="mb-8">Scope, stated plainly</h3>
           <ul class="check">
+            <li class="warn">cli2cli-mcp is the <em>substrate</em> — it provides the primitives; higher-level flow logic (typed conversations, workflows) is a thin layer above it</li>
             <li class="warn">Windows-first (ConPTY); POSIX works but is less exercised</li>
-            <li class="warn">The interactive-prompt flag is a regex heuristic — it can miss unusual prompts</li>
-            <li class="warn">Output carries raw ANSI/terminal escapes; the caller strips them</li>
-            <li class="warn">It's a <em>substrate</em> — it drives CLIs, it doesn't decide what to run</li>
+            <li class="warn">The interactive-prompt flag is a heuristic — treat it as a hint</li>
+            <li class="warn">Output carries raw ANSI; the caller strips it</li>
           </ul>
         </div>
       </div>
@@ -240,21 +238,21 @@
   <div id="aud-business" class="aud-section">
     <div class="section" style="margin-top:8px">
       <div class="sec-label">For business stakeholders &amp; non-technical readers</div>
-      <div class="box blue mb-24"><strong>One sentence:</strong> cli2cli-mcp lets an AI assistant operate the interactive command-line tools that normally require a person to sit there and click through prompts — turning "a human has to babysit this" into "the assistant handles it."</div>
+      <div class="box blue mb-24"><strong>One sentence:</strong> cli2cli-mcp is the foundational technology that lets a fleet of AI command-line agents work <em>together</em> — connecting tools like Claude and Gemini into coordinated flows on your own hardware, instead of each running in isolation.</div>
       <div class="grid-2">
         <div class="card"><h3 class="mb-12">The problem it solves</h3>
-          <p>A lot of real technical work happens in tools that pause to ask questions — "are you sure?", "pick an option", "enter a value". AI assistants are good at the thinking but can't answer those live prompts, so a human still has to step in every time.</p></div>
+          <p>The most powerful AI developer tools each run alone, in a terminal, driven one at a time by a human. There's no native way to make several of them collaborate — have one plan, another review, a third execute — and no way to run that on your own machine against your real work.</p></div>
         <div class="card"><h3 class="mb-12">What changes</h3>
-          <p>This is the small, focused adapter that lets the assistant answer those prompts itself. It's a developer building-block (open-core), designed to be reused across many products rather than a standalone app — the kind of quiet infrastructure that makes everything above it possible.</p>
-          <p>It adds no new subscription and no external cost: the AI doing the thinking is whatever the user already runs.</p></div>
+          <p>cli2cli-mcp makes each tool a controllable agent that a program can drive and connect to the others. That's the building block for automated, multi-step, multi-tool work — and it's <strong>open-core infrastructure</strong>: publish it to earn developer adoption, then build commercial products on top.</p>
+          <p>No new subscription, no external cost, nothing leaving the machine — the intelligence is whatever AI the user already runs.</p></div>
       </div>
     </div>
     <div class="section">
       <div class="sec-label">Why it's worth having</div>
       <div class="grid-3">
-        <div class="card"><h3 class="mb-8">Reusable</h3><p>One clean tool that any AI product can build on — not a one-off.</p></div>
-        <div class="card"><h3 class="mb-8">Trustworthy</h3><p>No keys, no credentials, nothing leaving the machine — it just drives terminals.</p></div>
-        <div class="card"><h3 class="mb-8">Open-core</h3><p>Publishable to developers to earn adoption, with commercial layers built above it.</p></div>
+        <div class="card"><h3 class="mb-8">A new category</h3><p>Others orchestrate cloud API calls. This orchestrates real CLI agents, locally — a defensible wedge.</p></div>
+        <div class="card"><h3 class="mb-8">Foundational</h3><p>Clean infrastructure many products can build on — the layer under a whole stack, not a one-off app.</p></div>
+        <div class="card"><h3 class="mb-8">Sovereign &amp; trustworthy</h3><p>No keys, no credentials, nothing leaves the machine — it drives your tools on your hardware.</p></div>
       </div>
     </div>
   </div><!-- /aud-business -->
@@ -263,26 +261,28 @@
   <div id="aud-user" class="aud-section">
     <div class="section" style="margin-top:8px">
       <div class="sec-label">For daily users — AI practitioners</div>
-      <div class="box blue mb-24"><strong>How to use it:</strong> register it once in your MCP host, then just ask your assistant in plain language to run and answer an interactive tool — it drives the five tools for you.</div>
+      <div class="box blue mb-24"><strong>How to use it:</strong> register it once in your MCP host, then ask your assistant in plain language to spin up CLI agents, connect them, and drive them — it composes the five tools for you.</div>
       <div class="grid-2 mb-24">
         <div class="card"><h3 class="mb-12">Step 1: register it</h3>
           <pre><span class="k">claude</span> mcp add cli2cli -- <span class="s">node</span> \
   C:/dev/cli2cli-mcp/dist/index.js</pre>
           <p class="mt-12" style="font-size:13px">A Claude Code session then lists the <code>cli2cli</code> tools automatically. Works the same in Cursor / Claude Desktop via their MCP config.</p></div>
-        <div class="card"><h3 class="mb-12">Step 2: just ask</h3>
+        <div class="card"><h3 class="mb-12">Step 2: coordinate agents</h3>
           <pre><span class="c">-- say this to your assistant --</span>
-<span class="v">Run the interactive db migration and
-answer its prompts to apply it.</span>
+<span class="v">Spawn a gemini session to review this
+design, then feed its notes into a
+claude session to implement it.</span>
 
-<span class="v">Start "npm create vite@latest", pick
-React + TypeScript, and finish it.</span></pre>
-          <p class="mt-12" style="font-size:13px">It spawns the tool, reads each prompt, and writes the answers — no babysitting.</p></div>
+<span class="v">Run the interactive db migration
+and answer its prompts to apply it.</span></pre>
+          <p class="mt-12" style="font-size:13px">It spawns each session, routes output between them, and answers prompts — no babysitting.</p></div>
       </div>
       <div class="card"><h3 class="mb-12">Good to know</h3>
         <ul class="check">
-          <li>The assistant is the intelligence — cli2cli-mcp just gives it a terminal</li>
-          <li>Each run is its own session; several can run at once</li>
-          <li>If a prompt is unusual and the "waiting" flag misses it, ask the assistant to read the stream and respond anyway</li>
+          <li>The assistant is the intelligence — cli2cli-mcp gives it the terminals and the wiring</li>
+          <li>Each agent is its own session; run and coordinate several at once</li>
+          <li>One agent's output can be read and written straight into another as a directive</li>
+          <li>It also answers wizards / <code>(y/n)</code> / menus that would otherwise block a tool</li>
         </ul></div>
     </div>
   </div><!-- /aud-user -->
