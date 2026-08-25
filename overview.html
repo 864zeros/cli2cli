@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cli2cli-mcp — Product Overview</title>
+  <style>
+    :root {
+      --blue:#0058ff; --blue-dark:#0040c0; --blue-light:#E8EFFF;
+      --gold:#B7791F; --green:#107E3E; --green-light:#F1FBF0; --red:#BB0000; --red-light:#FFF0F0;
+      --n-900:#0B1220; --n-700:#3A4152; --n-500:#5A6376; --n-300:#94A0B5; --n-100:#D8DEE9;
+      --n-050:#F5F6F9; --white:#FFFFFF; --border:#DEE2EC;
+      --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      --mono:"Consolas","Lucida Console",monospace; --radius:6px; --shadow-sm:0 1px 4px rgba(0,0,0,.07);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font);font-size:14px;line-height:1.65;color:var(--n-900);background:var(--n-050)}
+    .shell{background:var(--n-900);height:44px;display:flex;align-items:center;padding:0 32px;gap:16px;position:sticky;top:0;z-index:100}
+    .shell-mark{background:var(--blue);color:#fff;font-weight:700;font-size:13px;letter-spacing:.5px;padding:3px 7px;border-radius:3px}
+    .shell-suite{color:#fff;font-size:13px;font-weight:600}
+    .shell-div{width:1px;height:20px;background:rgba(255,255,255,.18)}
+    .shell-name{color:rgba(255,255,255,.7);font-size:13px;font-family:var(--mono)}
+    .shell-nav{margin-left:auto;display:flex;gap:24px}
+    .shell-nav a{color:rgba(255,255,255,.6);font-size:12px;text-decoration:none}
+    .shell-nav a:hover{color:#fff}
+    .hero{background:linear-gradient(135deg,#0B1220 0%,#0040c0 100%);padding:56px 64px 48px;position:relative;overflow:hidden}
+    .hero::before{content:"";position:absolute;right:-80px;top:-80px;width:400px;height:400px;border-radius:50%;background:rgba(0,88,255,.20)}
+    .hero::after{content:"";position:absolute;right:120px;bottom:-100px;width:240px;height:240px;border-radius:50%;background:rgba(0,88,255,.12)}
+    .hero-eyebrow{display:inline-flex;align-items:center;gap:6px;background:rgba(0,88,255,.3);border:1px solid rgba(0,88,255,.55);color:#BcD3FF;font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:20px}
+    .hero h1{font-size:34px;font-weight:700;color:#fff;letter-spacing:-.5px;margin-bottom:12px;position:relative;line-height:1.25}
+    .hero h1 span{color:#9DBcFF;font-family:var(--mono)}
+    .hero-sub{font-size:17px;color:rgba(255,255,255,.76);max-width:720px;line-height:1.6;position:relative}
+    .hero-meta{display:flex;gap:32px;margin-top:36px;flex-wrap:wrap}
+    .meta-pill{display:flex;flex-direction:column;gap:3px}
+    .meta-pill .lbl{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:rgba(255,255,255,.4)}
+    .meta-pill .val{font-size:13px;color:rgba(255,255,255,.88);font-weight:500}
+    .meta-pill .val.green{color:#6DD58C}
+    .audience-strip{background:var(--white);border-bottom:1px solid var(--border);padding:0 64px;display:flex;overflow-x:auto}
+    .aud-tab{padding:14px 24px;font-size:12px;font-weight:600;color:var(--n-500);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s}
+    .aud-tab:hover{color:var(--blue)} .aud-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+    .page{max-width:1120px;margin:0 auto;padding:48px 64px 100px}
+    .section{margin-bottom:56px}
+    .sec-label{font-size:10px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--n-300);margin-bottom:20px;display:flex;align-items:center;gap:10px}
+    .sec-label::after{content:"";flex:1;height:1px;background:var(--border)}
+    h2{font-size:22px;font-weight:700;color:var(--n-900);margin-bottom:8px}
+    h3{font-size:15px;font-weight:600;color:var(--n-700);margin-bottom:10px}
+    p{color:var(--n-700);margin-bottom:12px} p:last-child{margin-bottom:0}
+    .card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-sm)}
+    .card-accent-blue{border-top:3px solid var(--blue)} .card-accent-green{border-top:3px solid var(--green)} .card-accent-red{border-top:3px solid var(--red)}
+    .card+.card{margin-top:16px}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+    .mb-4{margin-bottom:4px}.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}.mb-24{margin-bottom:24px}.mt-12{margin-top:12px}
+    .badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+    .badge-blue{background:var(--blue-light);color:var(--blue-dark)} .badge-green{background:var(--green-light);color:var(--green)} .badge-grey{background:var(--n-050);color:var(--n-500);border:1px solid var(--border)}
+    .box{border-radius:var(--radius);padding:14px 18px;font-size:13px;line-height:1.6}
+    .box.blue{background:var(--blue-light);border-left:3px solid var(--blue);color:var(--blue-dark)}
+    .box.amber{background:#FFF9E6;border-left:3px solid var(--gold);color:#5C4300}
+    .box.green{background:var(--green-light);border-left:3px solid var(--green);color:#0A4D25}
+    .box strong{font-weight:600}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    thead th{background:var(--n-050);color:var(--n-700);font-weight:600;font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:10px 14px;border-bottom:2px solid var(--border);text-align:left}
+    tbody td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--n-700)}
+    tbody tr:last-child td{border-bottom:none} tbody tr:hover td{background:var(--blue-light)}
+    code{font-family:var(--mono);font-size:12px;background:var(--n-050);border:1px solid var(--border);padding:1px 5px;border-radius:3px}
+    pre{font-family:var(--mono);font-size:12px;background:#0B1220;color:#C9D1DB;padding:18px 22px;border-radius:var(--radius);overflow-x:auto;line-height:1.75}
+    pre .k{color:#9DBcFF} pre .s{color:#A5D6FF} pre .c{color:#7A8598} pre .p{color:#F0C674} pre .v{color:#98C379}
+    .flow{display:flex;align-items:center;flex-wrap:wrap;gap:4px 0}
+    .flow-node{background:var(--blue-light);border:1px solid var(--blue);color:var(--blue-dark);padding:9px 14px;border-radius:var(--radius);font-size:12px;font-weight:600;white-space:nowrap}
+    .flow-node.grey{background:var(--n-050);border-color:var(--border);color:var(--n-700)}
+    .flow-node.green{background:var(--green-light);border-color:var(--green);color:var(--green)}
+    .flow-arr{color:var(--n-300);font-size:18px;padding:0 8px}
+    ul.check{list-style:none;padding:0}
+    ul.check li{padding:7px 0 7px 28px;position:relative;border-bottom:1px solid var(--border);font-size:13px;color:var(--n-700)}
+    ul.check li:last-child{border-bottom:none}
+    ul.check li::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:700}
+    ul.check li.x::before{content:"✗";color:var(--red)} ul.check li.warn::before{content:"⚠";color:var(--gold)}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+    .stat{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;text-align:center}
+    .stat-num{font-size:30px;font-weight:700;color:var(--blue);line-height:1.1} .stat-num.green{color:var(--green)}
+    .stat-lbl{font-size:11px;color:var(--n-500);text-transform:uppercase;letter-spacing:.5px;margin-top:5px}
+    .aud-section{display:none} .aud-section.visible{display:block}
+    .role-card{display:flex;gap:12px;align-items:flex-start;padding:16px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius)}
+    .role-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .role-icon.blue{background:var(--blue-light)} .role-icon.green{background:var(--green-light)} .role-icon.amber{background:#FFF9E6}
+    .role-body h4{font-size:14px;font-weight:600;color:var(--n-900);margin-bottom:4px}
+    .role-body p{font-size:13px;color:var(--n-500);margin-bottom:0}
+    .footer{text-align:center;color:var(--n-300);font-size:12px;padding-top:28px;border-top:1px solid var(--border);margin-top:16px}
+    @media (max-width:900px){.hero{padding:36px 24px 32px}.page{padding:32px 24px 80px}.audience-strip{padding:0 24px}.grid-2,.grid-3,.stats{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<div class="shell">
+  <span class="shell-mark">◇ C2C</span>
+  <span class="shell-suite">864zeros · Dev Tools</span>
+  <div class="shell-div"></div>
+  <span class="shell-name">cli2cli-mcp</span>
+  <nav class="shell-nav">
+    <a href="#what-it-does">What it does</a>
+    <a href="#how-it-works">How it works</a>
+    <a href="#tools">Tool reference</a>
+    <a href="#setup">Setup</a>
+  </nav>
+</div>
+
+<div class="hero">
+  <div class="hero-eyebrow">MCP Server &nbsp;·&nbsp; Interactive CLI Driver &nbsp;·&nbsp; Key-free</div>
+  <h1>Give your AI hands for the CLIs that hang.<br><span>cli2cli-mcp</span></h1>
+  <p class="hero-sub">Interactive command-line tools stop and wait for a human — a <code>(y/n)</code>, an arrow-key menu, a setup wizard, a login. An AI's built-in shell can't answer those, so it just hangs. cli2cli-mcp runs any CLI inside a real terminal and exposes five tools, so your assistant can spawn it, read its prompts, and type the answers — driving <code>claude</code>, <code>gemini</code>, an installer, <code>git rebase -i</code>, an <code>ssh</code> session, anything.</p>
+  <div class="hero-meta">
+    <div class="meta-pill"><span class="lbl">Package</span><span class="val">@864zeros/cli2cli-mcp</span></div>
+    <div class="meta-pill"><span class="lbl">Version</span><span class="val">0.1</span></div>
+    <div class="meta-pill"><span class="lbl">Status</span><span class="val green">Live · smoke-verified</span></div>
+    <div class="meta-pill"><span class="lbl">Transport</span><span class="val">stdio (MCP)</span></div>
+    <div class="meta-pill"><span class="lbl">Tools</span><span class="val">5</span></div>
+    <div class="meta-pill"><span class="lbl">API keys</span><span class="val green">none required</span></div>
+  </div>
+</div>
+
+<div class="audience-strip">
+  <div class="aud-tab active" onclick="showAud('all', this)">All Audiences</div>
+  <div class="aud-tab" onclick="showAud('business', this)">Business / Non-Technical</div>
+  <div class="aud-tab" onclick="showAud('user', this)">Daily User</div>
+  <div class="aud-tab" onclick="showAud('dev', this)">Developer / Operator</div>
+</div>
+
+<div class="page">
+
+  <!-- ═══ ALL ═══ -->
+  <div id="aud-all" class="aud-section visible">
+
+    <div class="stats" style="margin-top:8px">
+      <div class="stat"><div class="stat-num">5</div><div class="stat-lbl">MCP tools</div></div>
+      <div class="stat"><div class="stat-num">4</div><div class="stat-lbl">Built-in CLI presets</div></div>
+      <div class="stat"><div class="stat-num">1</div><div class="stat-lbl">Source file</div></div>
+      <div class="stat"><div class="stat-num green">0</div><div class="stat-lbl">API keys</div></div>
+    </div>
+
+    <div class="section" id="what-it-does">
+      <div class="sec-label">What it does</div>
+      <div class="grid-2">
+        <div>
+          <h2 class="mb-12">Turns interactive CLIs into tools an AI can drive.</h2>
+          <p>A model's built-in shell tool can run <code>ls</code> — but the moment a program asks a question (<code>Proceed? (y/n)</code>, an arrow menu, a wizard, a password), it stalls, because there's nobody at the keyboard to answer.</p>
+          <p>cli2cli-mcp launches the program inside a real pseudo-terminal (ConPTY on Windows) and exposes five simple tools. Now the assistant can <strong>spawn</strong> it, <strong>read</strong> its output, notice it's waiting, <strong>write</strong> the answer, and repeat — supervising a live, interactive session end-to-end.</p>
+          <p>It's <strong>key-free</strong>: this is an MCP server, so the intelligence lives on the host session that connects to it. cli2cli-mcp is just the terminal driver — no API key, no <code>.env</code>, no model calls of its own.</p>
+        </div>
+        <div>
+          <div class="card card-accent-red mb-16">
+            <h3 class="mb-8">Before: interactive = blocked</h3>
+            <ul class="check">
+              <li class="x">The AI's shell hangs on any prompt</li>
+              <li class="x">Wizards / menus / logins can't be automated</li>
+              <li class="x">Confirmations need a human at the terminal</li>
+              <li class="x">No way to feed answers to a running CLI</li>
+            </ul>
+          </div>
+          <div class="card card-accent-green">
+            <h3 class="mb-8">After: spawn → read → write</h3>
+            <ul class="check">
+              <li>Any interactive CLI runs in a real PTY</li>
+              <li>The assistant reads prompts and types answers</li>
+              <li>Confirmations, menus, logins — all drivable</li>
+              <li>One MCP server any host can register</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-label">What you can do with it</div>
+      <div class="grid-3">
+        <div class="role-card"><div class="role-icon blue">🧙</div><div class="role-body"><h4>Drive wizards</h4><p>Run interactive setup flows (<code>npm create</code>, installers, scaffolders) and have the assistant answer each step.</p></div></div>
+        <div class="role-card"><div class="role-icon green">✅</div><div class="role-body"><h4>Answer confirmations</h4><p><code>git rebase -i</code>, a destructive <code>rm</code>, a DB migration asking <code>(y/n)</code> — the assistant reads the prompt and responds.</p></div></div>
+        <div class="role-card"><div class="role-icon amber">👀</div><div class="role-body"><h4>Supervise long runs</h4><p>Poll the stream, watch for an interactive pause, decide, and feed input — without blocking on a human.</p></div></div>
+        <div class="role-card"><div class="role-icon blue">🧵</div><div class="role-body"><h4>Run many sessions</h4><p>Each spawn is its own terminal with a <code>session_id</code>; list them, drive them independently, tear them down.</p></div></div>
+        <div class="role-card"><div class="role-icon green">🤖</div><div class="role-body"><h4>Drive other AI CLIs</h4><p>Presets for <code>claude</code> and <code>gemini</code> make other coding CLIs into tools your host session can invoke.</p></div></div>
+        <div class="role-card"><div class="role-icon amber">🔌</div><div class="role-body"><h4>Plug into any MCP host</h4><p>Register it in Claude Code, Cursor, or Claude Desktop with one line — no service, no key.</p></div></div>
+      </div>
+    </div>
+
+    <div class="section" id="how-it-works">
+      <div class="sec-label">How it works</div>
+      <div class="card mb-16">
+        <h3 class="mb-16">The loop — a supervised interactive session</h3>
+        <div class="flow mb-16">
+          <div class="flow-node">spawn<br><small style="font-weight:400;font-size:11px">launch in a PTY</small></div>
+          <div class="flow-arr">→</div>
+          <div class="flow-node grey">read<br><small style="font-weight:400;font-size:11px">see output + prompt</small></div>
+          <div class="flow-arr">→</div>
+          <div class="flow-node">write<br><small style="font-weight:400;font-size:11px">type the answer</small></div>
+          <div class="flow-arr">↺</div>
+          <div class="flow-node grey">read<br><small style="font-weight:400;font-size:11px">until it exits</small></div>
+          <div class="flow-arr">→</div>
+          <div class="flow-node green">terminate<br><small style="font-weight:400;font-size:11px">free the session</small></div>
+        </div>
+        <p style="font-size:13px;color:var(--n-500)"><code>read_cli_stream</code> also returns an <code>is_waiting_for_input</code> flag — a heuristic that spots confirmation prompts (<code>(y/n)</code>, "approve", "overwrite", menu selectors) so the caller knows when a decision is needed rather than polling blindly.</p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="mb-8">Why a real pseudo-terminal</h3>
+          <p>Interactive CLIs behave differently when they think they're talking to a terminal (colors, cursor control, prompts) versus a pipe. cli2cli-mcp uses <code>node-pty</code> — Windows <strong>ConPTY</strong> — so programs run exactly as they would for a human, and stdin injection actually reaches them. It also runs on POSIX.</p>
+        </div>
+        <div class="card">
+          <h3 class="mb-8">Why key-free is the point</h3>
+          <p>Because it's an MCP server, the LLM is the <strong>client</strong> — the session that connects to it. cli2cli-mcp never calls a model. It carries no credentials, ships no <code>.env</code>, and adds no per-call cost. It does exactly one job — drive terminals — and stays a clean, generic substrate.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-label">Verified &amp; honest</div>
+      <div class="grid-2">
+        <div class="card card-accent-green">
+          <h3 class="mb-8">What's proven</h3>
+          <ul class="check">
+            <li>Smoke test: real ConPTY round-trip (spawn a shell, drive it, read output, exit 0)</li>
+            <li>Driven live by Claude Code as a registered MCP server</li>
+            <li>Used as the execution substrate under a separate workflow engine</li>
+            <li>Extracted to its own repo; smoke-passes standalone</li>
+          </ul>
+        </div>
+        <div class="card card-accent-red">
+          <h3 class="mb-8">Be clear-eyed</h3>
+          <ul class="check">
+            <li class="warn">Windows-first (ConPTY); POSIX works but is less exercised</li>
+            <li class="warn">The interactive-prompt flag is a regex heuristic — it can miss unusual prompts</li>
+            <li class="warn">Output carries raw ANSI/terminal escapes; the caller strips them</li>
+            <li class="warn">It's a <em>substrate</em> — it drives CLIs, it doesn't decide what to run</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /aud-all -->
+
+  <!-- ═══ BUSINESS ═══ -->
+  <div id="aud-business" class="aud-section">
+    <div class="section" style="margin-top:8px">
+      <div class="sec-label">For business stakeholders &amp; non-technical readers</div>
+      <div class="box blue mb-24"><strong>One sentence:</strong> cli2cli-mcp lets an AI assistant operate the interactive command-line tools that normally require a person to sit there and click through prompts — turning "a human has to babysit this" into "the assistant handles it."</div>
+      <div class="grid-2">
+        <div class="card"><h3 class="mb-12">The problem it solves</h3>
+          <p>A lot of real technical work happens in tools that pause to ask questions — "are you sure?", "pick an option", "enter a value". AI assistants are good at the thinking but can't answer those live prompts, so a human still has to step in every time.</p></div>
+        <div class="card"><h3 class="mb-12">What changes</h3>
+          <p>This is the small, focused adapter that lets the assistant answer those prompts itself. It's a developer building-block (open-core), designed to be reused across many products rather than a standalone app — the kind of quiet infrastructure that makes everything above it possible.</p>
+          <p>It adds no new subscription and no external cost: the AI doing the thinking is whatever the user already runs.</p></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="sec-label">Why it's worth having</div>
+      <div class="grid-3">
+        <div class="card"><h3 class="mb-8">Reusable</h3><p>One clean tool that any AI product can build on — not a one-off.</p></div>
+        <div class="card"><h3 class="mb-8">Trustworthy</h3><p>No keys, no credentials, nothing leaving the machine — it just drives terminals.</p></div>
+        <div class="card"><h3 class="mb-8">Open-core</h3><p>Publishable to developers to earn adoption, with commercial layers built above it.</p></div>
+      </div>
+    </div>
+  </div><!-- /aud-business -->
+
+  <!-- ═══ USER ═══ -->
+  <div id="aud-user" class="aud-section">
+    <div class="section" style="margin-top:8px">
+      <div class="sec-label">For daily users — AI practitioners</div>
+      <div class="box blue mb-24"><strong>How to use it:</strong> register it once in your MCP host, then just ask your assistant in plain language to run and answer an interactive tool — it drives the five tools for you.</div>
+      <div class="grid-2 mb-24">
+        <div class="card"><h3 class="mb-12">Step 1: register it</h3>
+          <pre><span class="k">claude</span> mcp add cli2cli -- <span class="s">node</span> \
+  C:/dev/cli2cli-mcp/dist/index.js</pre>
+          <p class="mt-12" style="font-size:13px">A Claude Code session then lists the <code>cli2cli</code> tools automatically. Works the same in Cursor / Claude Desktop via their MCP config.</p></div>
+        <div class="card"><h3 class="mb-12">Step 2: just ask</h3>
+          <pre><span class="c">-- say this to your assistant --</span>
+<span class="v">Run the interactive db migration and
+answer its prompts to apply it.</span>
+
+<span class="v">Start "npm create vite@latest", pick
+React + TypeScript, and finish it.</span></pre>
+          <p class="mt-12" style="font-size:13px">It spawns the tool, reads each prompt, and writes the answers — no babysitting.</p></div>
+      </div>
+      <div class="card"><h3 class="mb-12">Good to know</h3>
+        <ul class="check">
+          <li>The assistant is the intelligence — cli2cli-mcp just gives it a terminal</li>
+          <li>Each run is its own session; several can run at once</li>
+          <li>If a prompt is unusual and the "waiting" flag misses it, ask the assistant to read the stream and respond anyway</li>
+        </ul></div>
+    </div>
+  </div><!-- /aud-user -->
+
+  <!-- ═══ DEV ═══ -->
+  <div id="aud-dev" class="aud-section">
+    <div class="section" style="margin-top:8px" id="tools">
+      <div class="sec-label">Developer &amp; operator reference</div>
+
+      <div class="card mb-16">
+        <h3 class="mb-12">Architecture — one server, one file</h3>
+        <pre>MCP host (Claude Code · Cursor · Desktop · a script)
+      │  stdio (JSON-RPC / MCP)
+      ▼
+<span class="v">cli2cli-mcp</span>  src/index.ts  →  dist/index.js      <span class="c"># the whole server, 5 tools</span>
+      │  node-pty (Windows ConPTY / POSIX)
+      ▼
+   any interactive CLI  (claude · gemini · shell · custom)</pre>
+        <p style="font-size:13px;color:var(--n-500);margin-top:12px">Runtime deps: <code>@modelcontextprotocol/sdk</code>, <code>node-pty</code>, <code>uuid</code>. Sessions are held in memory with bounded output buffers; env placeholders (e.g. a stray <code>ANTHROPIC_API_KEY=your-api-key-here</code>) are scrubbed before a child is spawned.</p>
+      </div>
+
+      <h3 class="mb-12" style="margin-top:24px">The five tools</h3>
+      <div class="card mb-16">
+        <table>
+          <thead><tr><th>Tool</th><th>Signature</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>spawn_cli_session</code></td><td><code>({cli_type, initial_prompt?, working_dir?, command?, args?}) → {session_id}</code></td><td>Launch a CLI in a PTY. <code>cli_type</code>: <code>claude · gemini · shell · custom</code>.</td></tr>
+            <tr><td><code>read_cli_stream</code></td><td><code>({session_id}) → {output, is_waiting_for_input, is_exited, exit_code}</code></td><td>Drain new output; flag an interactive pause or exit.</td></tr>
+            <tr><td><code>write_cli_input</code></td><td><code>({session_id, input_text, append_newline?}) → {ok}</code></td><td>Feed stdin — confirmations, answers, raw keystrokes.</td></tr>
+            <tr><td><code>list_cli_sessions</code></td><td><code>() → {sessions[]}</code></td><td>Every live session and its state.</td></tr>
+            <tr><td><code>terminate_cli_session</code></td><td><code>({session_id}) → {ok}</code></td><td>Kill a session and free its resources.</td></tr>
+          </tbody>
+        </table>
+        <div class="box blue mt-12" style="font-size:12px"><strong>Presets are de-opinionated.</strong> The <code>claude</code> preset defaults to safe (<code>--print</code>, no auto-skip-permissions). Anything opinionated or autonomous is the caller's choice via <code>cli_type:"custom"</code> with explicit <code>command</code> + <code>args</code> — so the substrate stays generic.</div>
+      </div>
+
+      <div class="grid-2 mb-16">
+        <div class="card">
+          <h3 class="mb-8">Register (MCP config)</h3>
+          <pre style="font-size:11px"><span class="p">"mcpServers"</span>: {
+  <span class="p">"cli2cli"</span>: {
+    <span class="p">"command"</span>: <span class="s">"node"</span>,
+    <span class="p">"args"</span>: [<span class="s">"C:/dev/cli2cli-mcp/dist/index.js"</span>]
+  }
+}</pre>
+          <p style="font-size:12px;color:var(--n-500);margin-top:8px">Or one-liner: <code>claude mcp add cli2cli -- node .../dist/index.js</code>.</p>
+        </div>
+        <div class="card">
+          <h3 class="mb-8" id="setup">Build &amp; verify</h3>
+          <pre style="font-size:11px"><span class="k">cd</span> C:\dev\cli2cli-mcp
+<span class="k">npm</span> install       <span class="c"># node-pty prebuilt</span>
+<span class="k">npm</span> run build     <span class="c"># tsc → dist/</span>
+<span class="k">node</span> scripts/smoke.mjs   <span class="c"># PTY round-trip</span></pre>
+          <p style="font-size:12px;color:var(--n-500);margin-top:8px">Node ≥ 20. Smoke test needs no external CLI.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="mb-12">Notes &amp; gotchas</h3>
+        <table>
+          <thead><tr><th>Item</th><th>Detail</th><th>Handling</th></tr></thead>
+          <tbody>
+            <tr><td><strong>ANSI in output</strong></td><td>ConPTY emits colors/cursor codes; results carry escape sequences.</td><td>The caller strips them (the host session, or your wrapper).</td></tr>
+            <tr><td><strong>Windows binary shims</strong></td><td><code>claude</code>/<code>gemini</code> are <code>.cmd</code> shims; ConPTY needs the resolved path.</td><td>Bare names are resolved via <code>PATH</code>/<code>PATHEXT</code> at spawn.</td></tr>
+            <tr><td><strong>Multi-line via argv</strong></td><td>A newline in an argv passed through <code>claude.cmd</code> truncates.</td><td>Feed long/multi-line prompts via stdin or a redirected file, not argv.</td></tr>
+            <tr><td><strong>Interactive-prompt flag</strong></td><td><code>is_waiting_for_input</code> is a regex heuristic.</td><td>Treat it as a hint; the caller can always read + decide directly.</td></tr>
+            <tr><td><strong>Placeholder env vars</strong></td><td>A dummy key in the environment can break a spawned CLI.</td><td>The server scrubs obvious placeholders before spawning children.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /aud-dev -->
+
+  <div class="footer">
+    @864zeros/cli2cli-mcp v0.1 &nbsp;·&nbsp; spawn · read · write · list · terminate &nbsp;·&nbsp; key-free interactive-CLI driver
+  </div>
+
+</div><!-- /page -->
+
+<script>
+  function showAud(id, tab){
+    document.querySelectorAll('.aud-section').forEach(el => el.classList.remove('visible'));
+    document.querySelectorAll('.aud-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('aud-' + id).classList.add('visible');
+    tab.classList.add('active');
+  }
+</script>
+</body>
+</html>
