@@ -67,7 +67,7 @@ function resolvePreset(
   switch (cliType) {
     case "claude":
       // Safe, generic default: one-shot --print. This substrate stays
-      // un-opinionated; callers that need autonomous execution (e.g. the AOE)
+      // un-opinionated; callers that need autonomous execution (e.g. an autonomous operator)
       // pass their own flags (--dangerously-skip-permissions, etc.) via the
       // "custom" cli_type. Keeps cli2cli-mcp independently sellable.
       return { command: "claude", args: initialPrompt ? ["--print", initialPrompt] : ["--print"] };
