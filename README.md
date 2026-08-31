@@ -1,8 +1,8 @@
 # @864zeros/cli2cli-mcp
 
 Bi-directional MCP bridge for driving **headless interactive AI CLIs** (Claude Code,
-Gemini CLI, or any command) inside a pseudo-terminal. It is the open-core foundation of
-the **864zeros Autonomous Operations Engine (864-AOE)** — the piece a gateway
+Gemini CLI, or any command) inside a pseudo-terminal. It is the open-core foundation for
+a gateway-driven, human-in-the-loop CLI orchestration layer — the piece a gateway
 (Telegram/SMS/webhook) drives to run and supervise CLI sessions remotely, with a
 Human-in-the-Loop (HITL) pause on interactive confirmation prompts.
 
@@ -37,7 +37,7 @@ npm run build    # tsc -> dist/
 **Claude Code** (this repo's target driver):
 
 ```sh
-claude mcp add cli2cli -- node "C:/dev/864zero-AOE/cli2cli-mcp/dist/index.js"
+claude mcp add cli2cli -- node "/path/to/cli2cli/dist/index.js"
 ```
 
 Or add to an MCP client config manually:
@@ -47,7 +47,7 @@ Or add to an MCP client config manually:
   "mcpServers": {
     "cli2cli": {
       "command": "node",
-      "args": ["C:/dev/864zero-AOE/cli2cli-mcp/dist/index.js"]
+      "args": ["/path/to/cli2cli/dist/index.js"]
     }
   }
 }
@@ -61,5 +61,4 @@ and print the round-tripped output.
 ## Status
 
 v0.1 — MCP core only. Next: the Telegram gateway + SQLite trace/HITL layer (Windows
-service, not systemd). See `../{idea}{cli2cli} full autonomous frameworks.md` for the
-full 864-AOE vision.
+service, not systemd).
