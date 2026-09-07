@@ -1,5 +1,5 @@
 /**
- * @864zeros/cli2cli-mcp
+ * cli2cli-mcp
  *
  * Bi-directional MCP bridge that drives headless interactive AI CLIs
  * (Claude Code, Gemini CLI, or any command) inside a pseudo-terminal.
@@ -218,7 +218,7 @@ const TOOLS: Tool[] = [
 ];
 
 const server = new Server(
-  { name: "864zeros-cli2cli-bridge", version: "0.1.0" },
+  { name: "cli2cli-bridge", version: "0.1.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -358,7 +358,7 @@ async function run(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   // stderr is safe for logs; stdout is the MCP transport.
-  process.stderr.write("[cli2cli-mcp] 864zeros bridge online (stdio)\n");
+  process.stderr.write("[cli2cli-mcp] bridge online (stdio)\n");
 }
 
 run().catch((err) => {

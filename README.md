@@ -1,4 +1,4 @@
-# @864zeros/cli2cli-mcp
+# cli2cli-mcp
 
 Bi-directional MCP bridge for driving **headless interactive AI CLIs** (Claude Code,
 Gemini CLI, or any command) inside a pseudo-terminal. It is the open-core foundation for

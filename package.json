@@ -1,5 +1,5 @@
 {
-  "name": "@864zeros/cli2cli-mcp",
+  "name": "cli2cli-mcp",
   "version": "0.1.0",
   "description": "Bi-directional MCP bridge for driving headless interactive AI CLIs (Claude Code, Gemini) over a PTY.",
   "type": "module",
@@ -25,10 +25,9 @@
     "model-context-protocol",
     "pty",
     "claude-code",
-    "gemini-cli",
-    "864zeros"
+    "gemini-cli"
   ],
-  "author": "864zeros",
+  "author": "",
   "license": "MIT",
   "private": false,
   "dependencies": {
