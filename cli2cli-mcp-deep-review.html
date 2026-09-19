@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cli2cli-mcp — Deep Review & Operational Briefing</title>
+  <style>
+    :root {
+      --blue: #0058ff;
+      --blue-dark: #0040c0;
+      --blue-light: #E8EFFF;
+      --gold: #B7791F;
+      --gold-light: #FFF9E6;
+      --green: #107E3E;
+      --green-light: #F1FBF0;
+      --red: #BB0000;
+      --red-light: #FFF0F0;
+      --n-900: #0B1220;
+      --n-800: #1C2433;
+      --n-700: #3A4152;
+      --n-500: #5A6376;
+      --n-300: #94A0B5;
+      --n-100: #D8DEE9;
+      --n-050: #F5F6F9;
+      --white: #FFFFFF;
+      --border: #DEE2EC;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --mono: "Consolas", "Fira Code", "Lucida Console", Monaco, monospace;
+      --radius: 6px;
+      --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.07);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--n-900);
+      background: var(--n-050);
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Shell Nav */
+    .shell {
+      background: var(--n-900);
+      height: 46px;
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .shell-mark {
+      background: var(--blue);
+      color: #fff;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .shell-title {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .shell-div {
+      width: 1px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .shell-repo {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+      font-family: var(--mono);
+    }
+    .shell-nav {
+      margin-left: auto;
+      display: flex;
+      gap: 20px;
+    }
+    .shell-nav a {
+      color: rgba(255, 255, 255, 0.65);
+      font-size: 12px;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .shell-nav a:hover { color: #fff; }
+
+    /* Hero Banner */
+    .hero {
+      background: linear-gradient(135deg, #0B1220 0%, #0040c0 100%);
+      padding: 48px 48px 42px;
+      position: relative;
+      overflow: hidden;
+      color: #fff;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      right: -60px;
+      top: -60px;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      background: rgba(0, 88, 255, 0.22);
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 88, 255, 0.35);
+      border: 1px solid rgba(157, 188, 255, 0.45);
+      color: #BCD3FF;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 10px;
+      line-height: 1.25;
+    }
+    .hero h1 span {
+      color: #9DBcFF;
+      font-family: var(--mono);
+    }
+    .hero-sub {
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.82);
+      max-width: 820px;
+      line-height: 1.6;
+    }
+    .hero-meta {
+      display: flex;
+      gap: 24px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+    .meta-pill {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .meta-pill .lbl {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.45);
+    }
+    .meta-pill .val {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.95);
+      font-weight: 500;
+    }
+    .meta-pill .val.green { color: #6DD58C; }
+    .meta-pill .val.mono { font-family: var(--mono); }
+
+    /* Page Layout */
+    .page {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .section {
+      margin-bottom: 48px;
+    }
+    .sec-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+      color: var(--n-500);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .sec-label::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--n-900);
+      margin-bottom: 12px;
+    }
+    h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--n-800);
+      margin-bottom: 8px;
+    }
+    p {
+      color: var(--n-700);
+      margin-bottom: 12px;
+    }
+    p:last-child { margin-bottom: 0; }
+
+    /* Cards & Grids */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow-sm);
+    }
+    .card-accent-blue { border-top: 3px solid var(--blue); }
+    .card-accent-green { border-top: 3px solid var(--green); }
+    .card-accent-gold { border-top: 3px solid var(--gold); }
+    .card-accent-red { border-top: 3px solid var(--red); }
+    .card + .card { margin-top: 16px; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    /* Stats */
+    .stat {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-num {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--blue);
+      line-height: 1.1;
+    }
+    .stat-num.green { color: var(--green); }
+    .stat-lbl {
+      font-size: 10px;
+      color: var(--n-500);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    /* Callout Boxes */
+    .box {
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .box.blue {
+      background: var(--blue-light);
+      border-left: 4px solid var(--blue);
+      color: var(--blue-dark);
+    }
+    .box.green {
+      background: var(--green-light);
+      border-left: 4px solid var(--green);
+      color: #0A4D25;
+    }
+    .box.gold {
+      background: var(--gold-light);
+      border-left: 4px solid var(--gold);
+      color: #5C4300;
+    }
+    .box.red {
+      background: var(--red-light);
+      border-left: 4px solid var(--red);
+      color: #8A0000;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead th {
+      background: var(--n-050);
+      color: var(--n-700);
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--border);
+      text-align: left;
+    }
+    tbody td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--n-700);
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--blue-light); }
+
+    /* Code & Pre */
+    code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: var(--n-050);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0B1220;
+    }
+    pre {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: var(--n-900);
+      color: #C9D1DB;
+      padding: 16px 20px;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      line-height: 1.7;
+    }
+    pre .k { color: #9DBcFF; font-weight: 600; }
+    pre .s { color: #A5D6FF; }
+    pre .c { color: #7A8598; font-style: italic; }
+    pre .p { color: #F0C674; }
+    pre .v { color: #98C379; }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-blue { background: var(--blue-light); color: var(--blue-dark); }
+    .badge-green { background: var(--green-light); color: var(--green); }
+    .badge-gold { background: var(--gold-light); color: var(--gold); }
+    .badge-grey { background: var(--n-050); color: var(--n-500); border: 1px solid var(--border); }
+
+    /* Lists */
+    ul.check { list-style: none; padding: 0; }
+    ul.check li {
+      padding: 8px 0 8px 26px;
+      position: relative;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--n-700);
+    }
+    ul.check li:last-child { border-bottom: none; }
+    ul.check li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--green);
+      font-weight: 700;
+    }
+    ul.check li.warn::before { content: "⚠"; color: var(--gold); }
+    ul.check li.x::before { content: "✗"; color: var(--red); }
+
+    /* Mermaid Container */
+    .diagram-container {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin: 16px 0;
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--n-500);
+      font-size: 12px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+    }
+
+    @media (max-width: 900px) {
+      .hero { padding: 32px 20px; }
+      .page { padding: 24px 16px 60px; }
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .shell-nav { display: none; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      mermaid.initialize({ startOnLoad: true, theme: "neutral" });
+    });
+  </script>
+</head>
+<body>
+
+<div class="shell">
+  <span class="shell-mark">◇ C2C</span>
+  <span class="shell-title">cli2cli-mcp</span>
+  <div class="shell-div"></div>
+  <span class="shell-repo">C:/dev/cli2cli-mcp</span>
+  <nav class="shell-nav">
+    <a href="#executive-summary">Summary</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#mcp-tools">Tools</a>
+    <a href="#subsystems">Subsystems</a>
+    <a href="#verification">Verification</a>
+    <a href="#observations">Next Steps</a>
+  </nav>
+</div>
+
+<div class="hero">
+  <div class="hero-eyebrow">Technical Dossier &nbsp;·&nbsp; Deep Code Review &nbsp;·&nbsp; Operational Briefing</div>
+  <h1>Deep Review: <span>cli2cli-mcp</span></h1>
+  <p class="hero-sub">Bi-directional MCP bridge for driving headless interactive AI CLIs (Claude Code, Gemini CLI, shells, or custom binaries) over native pseudo-terminals (Windows ConPTY / POSIX) with Human-in-the-Loop pause semantics.</p>
+  <div class="hero-meta">
+    <div class="meta-pill"><span class="lbl">Target Path</span><span class="val mono">C:\dev\cli2cli-mcp</span></div>
+    <div class="meta-pill"><span class="lbl">Git Remote</span><span class="val mono">github.com/864zeros/cli2cli</span></div>
+    <div class="meta-pill"><span class="lbl">Status</span><span class="val green">Clean · Smoke & Integration Verified</span></div>
+    <div class="meta-pill"><span class="lbl">Substrate</span><span class="val">node-pty ConPTY (120×40)</span></div>
+    <div class="meta-pill"><span class="lbl">Protocol</span><span class="val">Model Context Protocol (stdio)</span></div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Quick Stats -->
+  <div class="grid-4">
+    <div class="stat"><div class="stat-num">5</div><div class="stat-lbl">MCP Tools</div></div>
+    <div class="stat"><div class="stat-num">368</div><div class="stat-lbl">Lines in src/index.ts</div></div>
+    <div class="stat"><div class="stat-num green">100%</div><div class="stat-lbl">Smoke & Test Pass</div></div>
+    <div class="stat"><div class="stat-num green">0</div><div class="stat-lbl">API Keys Required</div></div>
+  </div>
+
+  <!-- 1. Executive Summary -->
+  <div class="section" id="executive-summary">
+    <div class="sec-label">1. Executive Summary & Purpose</div>
+    <div class="grid-2">
+      <div class="card card-accent-blue">
+        <h3 style="color:var(--blue)">The Core Thesis: Process vs. API</h3>
+        <p>Most existing multi-agent frameworks orchestrate cloud model API calls (e.g. sending prompts to a hosted endpoint). <strong>cli2cli-mcp</strong> fundamentally flips the unit of orchestration to <strong>actual CLI processes running on local hardware</strong>.</p>
+        <p>By wrapping executions in a real pseudo-terminal (Windows <code>ConPTY</code> via <code>node-pty</code>), agents execute with full access to the local filesystem, local repositories, shell binaries, and authenticated user credentials.</p>
+      </div>
+      <div class="card card-accent-green">
+        <h3 style="color:var(--green)">Open-Core Architecture & Ecosystem Role</h3>
+        <p>An open-core, un-opinionated, standalone repository (MIT licensed). It functions as the <strong>hardware/process substrate</strong>.</p>
+        <p>Higher-level orchestration (routing output between agents, dispatch state machines, and Telegram/SMS gateways) resides in consumer layers and gateway daemons.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Architecture & File Inventory -->
+  <div class="section" id="architecture">
+    <div class="sec-label">2. Architecture & File Inventory</div>
+
+    <div class="diagram-container">
+      <div class="mermaid">
+graph TD
+    Host["MCP Host<br>(Claude Code / Cursor / Gateway)"] -- "stdio (JSON-RPC)" --> Server["cli2cli-mcp<br>(src/index.ts)"]
+    Server -- "node-pty (ConPTY)" --> P1["Claude Code CLI<br>(claude)"]
+    Server -- "node-pty (ConPTY)" --> P2["Gemini CLI<br>(gemini)"]
+    Server -- "node-pty (ConPTY)" --> P3["Interactive Shell<br>(cmd.exe / bash)"]
+    Server -- "node-pty (ConPTY)" --> P4["Custom Command<br>(docker / git / psql)"]
+    Server -. "HITL Detection (is_waiting_for_input)" .-> Host
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px">Repository File Map</h3>
+      <table>
+        <thead>
+          <tr><th>File Path</th><th>Size / Type</th><th>Function & Role</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="src/index.ts"><code>src/index.ts</code></a></td>
+            <td>368 lines</td>
+            <td>The complete MCP server implementation: preset mapping, ConPTY process management, env scrubbing, stream buffering, HITL detection, and 5 tool handlers.</td>
+          </tr>
+          <tr>
+            <td><a href="package.json"><code>package.json</code></a></td>
+            <td>888 bytes</td>
+            <td>ES module package definition. Dependencies: <code>@modelcontextprotocol/sdk</code> (^1.6.0), <code>node-pty</code> (^1.0.0), <code>uuid</code> (^9.0.1). Binary exposed as <code>cli2cli-mcp</code>.</td>
+          </tr>
+          <tr>
+            <td><a href="tsconfig.json"><code>tsconfig.json</code></a></td>
+            <td>360 bytes</td>
+            <td>TypeScript 5.4 configuration targeting <code>ES2022</code> and <code>NodeNext</code>, compiling to <code>dist/</code> with strict type checking, source maps, and declarations.</td>
+          </tr>
+          <tr>
+            <td><a href="scripts/smoke.mjs"><code>scripts/smoke.mjs</code></a></td>
+            <td>55 lines</td>
+            <td>Standalone end-to-end smoke test using <code>@modelcontextprotocol/sdk/client</code>. Spawns <code>cmd.exe</code>, drains stdout, verifies string echo, and exits cleanly.</td>
+          </tr>
+          <tr>
+            <td><a href="overview.html"><code>overview.html</code></a></td>
+            <td>31.2 KB</td>
+            <td>Interactive, multi-audience product specification and architectural dashboard with audience toggles (Executive, Daily User, Operator).</td>
+          </tr>
+          <tr>
+            <td><a href="AGENTS.md"><code>AGENTS.md</code></a></td>
+            <td>563 bytes</td>
+            <td>Knowledge Graph node descriptor parsed by <code>864scan</code> into <code>graph.jsonld</code>.</td>
+          </tr>
+          <tr>
+            <td><a href="IGNORE/intercept.config"><code>IGNORE/intercept.config</code></a></td>
+            <td>2.6 KB</td>
+            <td>Configuration for session continuity and event observability taps.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3. The 5 MCP Tools -->
+  <div class="section" id="mcp-tools">
+    <div class="sec-label">3. The 5 MCP Tools in Detail</div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Tool Name</th><th>Signature & Inputs</th><th>Output Payload</th><th>Behavioral Mechanics & Edge Cases</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong><code>spawn_cli_session</code></strong></td>
+            <td>
+              <code>cli_type</code>: <code>"claude"|"gemini"|"shell"|"custom"</code><br>
+              <code>initial_prompt?</code>: string<br>
+              <code>working_dir?</code>: string<br>
+              <code>command?</code>: string<br>
+              <code>args?</code>: string[]
+            </td>
+            <td>
+              <code>status</code>: "SPAWNED"<br>
+              <code>session_id</code>: UUIDv4<br>
+              <code>cli_type</code>, <code>command</code>, <code>working_dir</code>
+            </td>
+            <td>
+              Resolves platform executable paths using Windows <code>PATH</code>/<code>PATHEXT</code>. Scrubs placeholder environment credentials. Spawns a 120×40 xterm-256color ConPTY process. Hooks data and exit listeners.
+            </td>
+          </tr>
+          <tr>
+            <td><strong><code>read_cli_stream</code></strong></td>
+            <td><code>session_id</code>: string</td>
+            <td>
+              <code>output</code>: string (raw ANSI)<br>
+              <code>is_waiting_for_input</code>: boolean<br>
+              <code>is_exited</code>: boolean<br>
+              <code>exit_code</code>: number | null
+            </td>
+            <td>
+              <strong>Destructively drains</strong> the in-memory output buffer since the last poll. Returns <code>is_waiting_for_input: true</code> if the HITL regex matched and input has not yet been injected.
+            </td>
+          </tr>
+          <tr>
+            <td><strong><code>write_cli_input</code></strong></td>
+            <td>
+              <code>session_id</code>: string<br>
+              <code>input_text</code>: string<br>
+              <code>append_newline?</code>: boolean (default <code>true</code>)
+            </td>
+            <td>
+              <code>status</code>: "INPUT_SENT"<br>
+              <code>session_id</code>: string
+            </td>
+            <td>
+              Writes text to the pseudo-terminal stdin (appending <code>\r</code> on Windows ConPTY). Resets <code>isWaitingForInput = false</code>. Supports <code>append_newline: false</code> for raw arrow keys or menu keystrokes.
+            </td>
+          </tr>
+          <tr>
+            <td><strong><code>list_cli_sessions</code></strong></td>
+            <td><em>(None)</em></td>
+            <td><code>sessions</code>: CLISession[]</td>
+            <td>
+              Enumerates all active in-memory sessions including uptime in milliseconds, current working directory, process command, exit code, and waiting state.
+            </td>
+          </tr>
+          <tr>
+            <td><strong><code>terminate_cli_session</code></strong></td>
+            <td><code>session_id</code>: string</td>
+            <td>
+              <code>status</code>: "TERMINATED"<br>
+              <code>session_id</code>: string
+            </td>
+            <td>
+              Calls <code>process.kill()</code> on the PTY instance and removes the session record from memory.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. Key Subsystem Analysis -->
+  <div class="section" id="subsystems">
+    <div class="sec-label">4. Key Subsystem Analysis</div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Platform & Binary Resolution</h3>
+        <p>Windows installs CLI tools (e.g. <code>claude</code>, <code>gemini</code>) as <code>.cmd</code> or <code>.bat</code> wrappers on the <code>PATH</code>. ConPTY requires resolved executables. <a href="src/index.ts#L94"><code>resolveCommand()</code></a> scans directory entries and tests candidates against <code>PATHEXT</code>.</p>
+        <pre><span class="c">// src/index.ts line 94</span>
+<span class="k">function</span> resolveCommand(command: <span class="p">string</span>): <span class="p">string</span> {
+  <span class="k">if</span> (command.includes(<span class="s">"/"</span>) || command.includes(<span class="s">"\\"</span>)) <span class="k">return</span> command;
+  <span class="k">if</span> (!IS_WIN) <span class="k">return</span> command;
+  <span class="k">for</span> (<span class="k">const</span> dir <span class="k">of</span> pathDirs) {
+    <span class="k">for</span> (<span class="k">const</span> ext <span class="k">of</span> exts) {
+      <span class="k">const</span> candidate = join(dir, command + ext);
+      <span class="k">if</span> (existsSync(candidate)) <span class="k">return</span> candidate;
+    }
+  }
+} </pre>
+      </div>
+
+      <div class="card">
+        <h3>Credential Protection & Sanitization</h3>
+        <p>Placeholder API keys in global environment files (e.g. <code>ANTHROPIC_API_KEY="your-api-key-here"</code>) override valid cached OAuth credentials, causing spawned CLI subagents to crash. <a href="src/index.ts#L119"><code>scrubEnv()</code></a> drops placeholder values automatically.</p>
+        <pre><span class="c">// Regex to filter placeholder values</span>
+<span class="k">const</span> PLACEHOLDER_VALUE =
+  <span class="s">/^(your[-_].*[-_]here|change[-_]?me|placeholder|x{3,}|&lt;.*&gt;|todo)$/i</span>;
+
+<span class="k">function</span> scrubEnv(env: NodeJS.ProcessEnv) {
+  <span class="c">// Excludes keys matching dummy placeholders</span>
+} </pre>
+      </div>
+
+      <div class="card">
+        <h3>Human-in-the-Loop (HITL) Prompt Detection</h3>
+        <p>When an interactive agent halts for user confirmation, standard pipes hang indefinitely. <a href="src/index.ts#L40"><code>HITL_PROMPT_PATTERN</code></a> matches incoming chunks and raises a flag so remote hosts can present an Approve/Reject prompt.</p>
+        <div class="box gold">
+          <strong>Pattern:</strong> <code>/(\(y\/n\)|\[y\/n\]|yes\/no|approve|confirm|proceed\??|overwrite|are you sure|press enter|choose an option|select an option|❯)/i</code>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Sliding-Window Memory Management</h3>
+        <p>To prevent runaway chatty processes or compilation logs from filling host memory, session output buffers are clamped to a sliding window of 200,000 characters (<a href="src/index.ts#L33"><code>MAX_BUFFER_CHARS</code></a>).</p>
+        <div class="box blue">
+          When <code>read_cli_stream</code> is called, the accumulated buffer is transferred and cleared (destructive drain).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Verification Results -->
+  <div class="section" id="verification">
+    <div class="sec-label">5. Verification & Health Check Results</div>
+
+    <div class="grid-2">
+      <div class="card card-accent-green">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h3 style="margin:0">Node.js MCP Smoke Test</h3>
+          <span class="badge badge-green">PASS</span>
+        </div>
+        <p>Executed <code>node scripts/smoke.mjs</code>. Initialized stdio client, spawned <code>cmd.exe</code>, read stream buffer, verified round-trip echo:</p>
+        <pre>[cli2cli-mcp] bridge online (stdio)
+tools: spawn_cli_session, read_cli_stream, write_cli_input,
+       list_cli_sessions, terminate_cli_session
+spawned: e9737bb6-2ede-... -> C:\WINDOWS\system32\cmd.exe
+--- stream output ---
+hello-from-cli2cli
+--- exited: true code: 0 ---
+<span class="v">SMOKE PASS ✅</span></pre>
+      </div>
+
+      <div class="card card-accent-green">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h3 style="margin:0">Python Gateway Integration</h3>
+          <span class="badge badge-green">PASS</span>
+        </div>
+        <p>Executed Python MCP client integration test. Verified end-to-end PTY spawning, HITL prompt detection, and stdin injection round-trip:</p>
+        <pre>[cli2cli-mcp] bridge online (stdio)
+[HITL] pause detected -> auto-approving.
+--- result ---
+status:    COMPLETED | exit_code: 0
+decisions: ['y']     | duration:  1712 ms
+output:    Proceed? (y/n):y \n GOT:y
+HITL fired: True | round-tripped: True | completed: True
+<span class="v">ORCHESTRATOR TEST PASS [OK]</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Observations & Next Steps -->
+  <div class="section" id="observations">
+    <div class="sec-label">6. Technical Observations & Decision Points</div>
+    <div class="card card-accent-gold">
+      <h3 style="margin-bottom:12px">Architectural Considerations Before Starting Work</h3>
+      <ul class="check">
+        <li class="warn">
+          <strong>Claude CLI Preset Default:</strong> <code>resolvePreset("claude")</code> defaults to <code>["--print", initialPrompt]</code>. This runs Claude in non-interactive batch mode and terminates. If multi-turn interactive steering is desired, the caller must use <code>cli_type: "custom"</code> or we should add an interactive preset toggle.
+        </li>
+        <li class="warn">
+          <strong>Raw ANSI Escape Codes:</strong> The stream output contains raw VT100/ANSI sequences (colors, cursor positioning). Upstream consumers must strip ANSI themselves (e.g. via regex in downstream client orchestrators), unless we add an optional <code>strip_ansi: boolean</code> parameter to <code>read_cli_stream</code>.
+        </li>
+        <li class="warn">
+          <strong>Process Tree Termination on Windows:</strong> <code>session.process.kill()</code> issues a kill command via <code>node-pty</code>. Deep process trees spawned via <code>cmd.exe</code> may require tree-kill safeguards (e.g. <code>taskkill /F /T</code>) to prevent orphaned processes.
+        </li>
+        <li class="warn">
+          <strong>In-Memory Session Accumulation:</strong> Exited sessions remain in the <code>sessions</code> Map indefinitely until explicitly deleted via <code>terminate_cli_session</code>. A TTL or auto-pruning sweep could be added for long-running servers.
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">
+    cli2cli-mcp Deep Review &nbsp;·&nbsp; Generated 2026-09-08 &nbsp;·&nbsp; Antigravity Pair Programming
+  </div>
+
+</div>
+
+</body>
+</html>
