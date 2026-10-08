@@ -64,19 +64,30 @@ function resolvePreset(
   command?: string,
   args?: string[]
 ): { command: string; args: string[] } {
+  const userArgs = args && args.length > 0 ? args : null;
+
   switch (cliType) {
     case "claude":
-      // Safe, generic default: one-shot --print. This substrate stays
-      // un-opinionated; callers that need autonomous execution (e.g. an autonomous operator)
-      // pass their own flags (--dangerously-skip-permissions, etc.) via the
-      // "custom" cli_type. Keeps cli2cli-mcp independently sellable.
-      return { command: "claude", args: initialPrompt ? ["--print", initialPrompt] : ["--print"] };
+      // Safe generic default (--print); callers can override with explicit args
+      return { 
+        command: "claude", 
+        args: userArgs ?? (initialPrompt ? ["--print", initialPrompt] : ["--print"]) 
+      };
     case "gemini":
-      return { command: "gemini", args: initialPrompt ? [initialPrompt] : [] };
+      return { 
+        command: "gemini", 
+        args: userArgs ?? (initialPrompt ? [initialPrompt] : []) 
+      };
+    case "antigravity":
+    case "agy":
+      return { 
+        command: "agy", 
+        args: userArgs ?? (initialPrompt ? [initialPrompt] : []) 
+      };
     case "shell":
       return IS_WIN
-        ? { command: "cmd.exe", args: initialPrompt ? ["/c", initialPrompt] : [] }
-        : { command: "bash", args: initialPrompt ? ["-c", initialPrompt] : [] };
+        ? { command: "cmd.exe", args: userArgs ?? (initialPrompt ? ["/c", initialPrompt] : []) }
+        : { command: "bash", args: userArgs ?? (initialPrompt ? ["-c", initialPrompt] : []) };
     case "custom":
       if (!command) throw new Error("cli_type 'custom' requires a 'command'.");
       return { command, args: args ?? [] };
@@ -145,8 +156,8 @@ const TOOLS: Tool[] = [
       properties: {
         cli_type: {
           type: "string",
-          enum: ["claude", "gemini", "shell", "custom"],
-          description: "Which CLI to launch."
+          enum: ["claude", "gemini", "antigravity", "agy", "shell", "custom"],
+          description: "Which CLI to launch (claude, gemini, antigravity/agy, shell, or custom)."
         },
         initial_prompt: {
           type: "string",
