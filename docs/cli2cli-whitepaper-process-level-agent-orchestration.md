@@ -13,7 +13,11 @@
 
 Modern autonomous agent frameworks—including LangChain, AutoGen, CrewAI, and OpenAI Swarm—operate almost universally at the **Model API layer**. They coordinate agents by formatting strings, appending messages to conversation arrays, and executing stateless HTTP requests against remote model endpoints. While effective for basic conversational workflows, this abstraction completely collapses when applied to real-world software engineering, where production coding assistants (e.g., Claude Code, Gemini CLI, Antigravity, aider, and Cursor CLI) are not raw API endpoints, but stateful, interactive command-line environments equipped with native terminal emulation, local file trees, git identity, Language Server Protocols (LSP), and interactive prompt dialogues.
 
-This paper introduces **`cli2cli`**, an open-core architectural standard and MCP bridge that shifts multi-agent orchestration from the API layer to the **Process Layer**. By hosting real AI developer CLIs inside native Windows pseudo-terminals (ConPTY via `node-pty`), `cli2cli` transforms isolated terminal tools into addressable, composable, and observable agent nodes. We present:
+This paper introduces **`cli2cli`**, an open-core architectural standard and MCP bridge that shifts multi-agent orchestration from the API layer to the **Process Layer**. By hosting real AI developer CLIs inside native Windows pseudo-terminals (ConPTY via `node-pty`), `cli2cli` transforms isolated terminal tools into addressable, composable, and observable agent nodes. 
+
+Crucially, the architecture bifurcates raw mechanical execution from human sovereignty:
+- **`cli2cli-mcp` is the Engine:** The raw, un-opinionated PTY substrate driving headless terminal processes at machine speed.
+- **`cli2cli-aoe` is the Steering Wheel:** The governance appliance built specifically to insert the human operator in control, ensuring autonomous speed without loss of authority.
 1. The **5 core MCP primitives** (`spawn`, `read`, `write`, `list`, `terminate`) that enable bi-directional inter-CLI piping;
 2. A non-blocking **Human-in-the-Loop (HITL) prompt heuristic** that intercepts interactive confirmation menus (`(y/n)`, `❯`) in raw ANSI streams, preventing headless agents from deadlocking;
 3. The **Dual-Plane Architecture**, cleanly segregating execution (**DOING**) from real-time telemetry (**WATCHING**); and
