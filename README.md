@@ -9,6 +9,16 @@ Human-in-the-Loop (HITL) pause on interactive confirmation prompts.
 > Target host is a **Windows** mini-PC (ConPTY via `node-pty`). The server also runs on
 > POSIX; binary resolution and shell defaults are platform-aware.
 
+## Technical White Paper
+
+Read the full architectural specification, comparative analysis, and benchmarks:  
+📖 **[cli2cli: Process-Level Multi-Agent Orchestration via Bi-Directional Pseudo-Terminal Bridges](docs/cli2cli-whitepaper-process-level-agent-orchestration.md)**
+- **The Process-Level Wedge:** Why API-level agent frameworks (LangChain, CrewAI, Swarm) collapse on real developer tools.
+- **The ConPTY Pseudo-Terminal Bridge:** Full 120x40 terminal emulation with raw ANSI stream handling.
+- **Non-blocking HITL Detection:** Empirical heuristic that flags `(y/n)` prompts before sessions deadlock.
+- **The Kate Governance Protocol:** Implementing RULE-000 (*"Machine recommends; human signs"*).
+- **Zero Token Overhead:** $0.00 external orchestration cost; agents run on host hardware.
+
 ## Tools
 
 | Tool | Purpose |
