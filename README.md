@@ -68,7 +68,26 @@ Or add to an MCP client config manually:
 `npm run build` then run `node scripts/smoke.mjs` to spawn a `shell` session, drive it,
 and print the round-tripped output.
 
+## Nucleus Cockpit (Single-Terminal Mission Control)
+
+Launch the 8-slot interactive TUI supervisor over MCP stdio:
+
+```sh
+npm run build
+npm run nucleus
+```
+
+- **`1`–`8`**: Switch focus between the 8 ConPTY session slots
+- **`y` / `n`**: Instant HITL confirmation (`write_cli_input`) when a slot flags `⚠️ WAIT y/n`
+- **`i` / `Enter`**: Type a prompt or command into the focused slot
+- **`s`**: Spawn a session in the focused slot (`claude`, `gemini`, `agy`, `shell`, or `custom <cmd>`)
+- **`d`**: Spawn an interactive HITL probe to test audio bell (`\x07`) + `⚠️ WAIT` alert + `y`/`n` approval
+- **`r`**: Toggle raw keystroke passthrough (`append_newline: false`) for interactive TUI menus (`Esc` to exit)
+- **`k`**: Terminate the focused slot's session
+- **`↑` / `↓` / `PgUp` / `PgDn`**: Scroll through the slot's 500-line ring buffer (full streams also logged to `logs/`)
+- **`q`**: Cleanly terminate active sessions and exit
+
 ## Status
 
-v0.1 — MCP core only. Next: the Telegram gateway + SQLite trace/HITL layer (Windows
+v0.1 — MCP core + Nucleus 8-slot TUI cockpit. Next: the Telegram gateway + SQLite trace/HITL layer (Windows
 service, not systemd).

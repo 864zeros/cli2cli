@@ -40,6 +40,14 @@ const MAX_BUFFER_CHARS = 200_000;
 const HITL_PROMPT_PATTERN =
   /(\(y\/n\)|\[y\/n\]|yes\/no|approve|confirm|proceed\??|overwrite|are you sure|press enter|choose an option|select an option|❯)/i;
 
+/** Strip ANSI CSI/OSC escape sequences so regex matching works across color codes. */
+// eslint-disable-next-line no-control-regex
+const ANSI_ESCAPE_PATTERN = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]|\].*?(?:\x07|\x1B\\))/g;
+
+function stripAnsi(input: string): string {
+  return input.replace(ANSI_ESCAPE_PATTERN, "");
+}
+
 interface CLISession {
   id: string;
   cliType: string;
@@ -49,6 +57,8 @@ interface CLISession {
   process: pty.IPty;
   /** Unread output since the last read_cli_stream drain. */
   buffer: string;
+  /** Rolling plain-text tail used for cross-chunk HITL prompt detection. */
+  recentTail: string;
   /** Set when HITL_PROMPT_PATTERN last matched and no input has been sent since. */
   isWaitingForInput: boolean;
   exitCode: number | null;
@@ -62,16 +72,23 @@ function resolvePreset(
   cliType: string,
   initialPrompt: string,
   command?: string,
-  args?: string[]
+  args?: string[],
+  interactive = true
 ): { command: string; args: string[] } {
   const userArgs = args && args.length > 0 ? args : null;
 
   switch (cliType) {
     case "claude":
-      // Safe generic default (--print); callers can override with explicit args
-      return { 
-        command: "claude", 
-        args: userArgs ?? (initialPrompt ? ["--print", initialPrompt] : ["--print"]) 
+      if (userArgs) return { command: "claude", args: userArgs };
+      if (!interactive) {
+        return {
+          command: "claude",
+          args: initialPrompt ? ["--print", initialPrompt] : ["--print"]
+        };
+      }
+      return {
+        command: "claude",
+        args: initialPrompt ? [initialPrompt] : []
       };
     case "gemini":
       return { 
@@ -139,11 +156,15 @@ function scrubEnv(env: NodeJS.ProcessEnv): Record<string, string> {
   return out;
 }
 
+const TAIL_WINDOW_CHARS = 512;
+
 function appendToBuffer(session: CLISession, data: string): void {
   session.buffer += data;
   if (session.buffer.length > MAX_BUFFER_CHARS) {
     session.buffer = session.buffer.slice(session.buffer.length - MAX_BUFFER_CHARS);
   }
+  const plainChunk = stripAnsi(data);
+  session.recentTail = (session.recentTail + plainChunk).slice(-TAIL_WINDOW_CHARS);
 }
 
 const TOOLS: Tool[] = [
@@ -176,6 +197,10 @@ const TOOLS: Tool[] = [
           type: "array",
           items: { type: "string" },
           description: "For cli_type 'custom': argument vector."
+        },
+        interactive: {
+          type: "boolean",
+          description: "Keep session interactive (default true). Set false for one-shot --print mode on claude."
         }
       },
       required: ["cli_type"]
@@ -249,12 +274,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const cliType = String(args.cli_type);
         const initialPrompt = args.initial_prompt ? String(args.initial_prompt) : "";
         const cwd = args.working_dir ? String(args.working_dir) : process.cwd();
+        const interactive = args.interactive !== false;
 
         const preset = resolvePreset(
           cliType,
           initialPrompt,
           args.command ? String(args.command) : undefined,
-          Array.isArray(args.args) ? (args.args as string[]) : undefined
+          Array.isArray(args.args) ? (args.args as string[]) : undefined,
+          interactive
         );
         const command = resolveCommand(preset.command);
 
@@ -275,6 +302,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           cwd,
           process: proc,
           buffer: "",
+          recentTail: "",
           isWaitingForInput: false,
           exitCode: null,
           startedAt: Date.now()
@@ -282,7 +310,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         proc.onData((data) => {
           appendToBuffer(session, data);
-          if (HITL_PROMPT_PATTERN.test(data)) session.isWaitingForInput = true;
+          if (HITL_PROMPT_PATTERN.test(session.recentTail)) {
+            session.isWaitingForInput = true;
+          }
         });
         proc.onExit(({ exitCode }) => {
           session.exitCode = exitCode;
@@ -325,6 +355,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const appendNewline = args.append_newline !== false;
         session.process.write(appendNewline ? `${text}\r` : text);
         session.isWaitingForInput = false;
+        session.recentTail = "";
 
         return ok({ status: "INPUT_SENT", session_id: session.id });
       }
