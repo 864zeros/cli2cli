@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cli2cli-helm &amp; The Open-Source cli2cli Ecosystem — Architectural Report</title>
+  <style>
+    :root {
+      --blue: #0058ff;
+      --blue-dark: #0039a6;
+      --blue-light: #e8efff;
+      --cyan: #00b4d8;
+      --gold: #d97706;
+      --gold-light: #fffbeb;
+      --green: #0f766e;
+      --green-bright: #10b981;
+      --green-light: #ecfdf5;
+      --red: #dc2626;
+      --red-light: #fef2f2;
+      --purple: #6d28d9;
+      --purple-light: #f5f3ff;
+      --n-950: #060b14;
+      --n-900: #0b1220;
+      --n-800: #1e293b;
+      --n-700: #334155;
+      --n-500: #64748b;
+      --n-300: #94a3b8;
+      --n-100: #e2e8f0;
+      --n-050: #f8fafc;
+      --white: #ffffff;
+      --border: #dde3ee;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      --mono: "Cascadia Code", "JetBrains Mono", "Consolas", monospace;
+      --radius: 8px;
+      --shadow-sm: 0 1px 4px rgba(11, 18, 32, 0.06);
+      --shadow-md: 0 8px 24px rgba(11, 18, 32, 0.09);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--n-900);
+      background: var(--n-050);
+    }
+
+    /* Sticky Top Bar */
+    .shell {
+      background: var(--n-950);
+      height: 48px;
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .shell-mark {
+      background: var(--blue);
+      color: #fff;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .shell-suite { color: #fff; font-size: 13px; font-weight: 600; }
+    .shell-div { width: 1px; height: 18px; background: rgba(255,255,255,0.18); }
+    .shell-name { color: #7dd3fc; font-size: 12.5px; font-family: var(--mono); }
+    .shell-nav { margin-left: auto; display: flex; gap: 22px; }
+    .shell-nav a {
+      color: rgba(255,255,255,0.65);
+      font-size: 12px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+    .shell-nav a:hover { color: #fff; }
+
+    /* Hero Header */
+    .hero {
+      background: radial-gradient(circle at 85% 20%, rgba(0, 180, 216, 0.22), transparent 45%),
+                  linear-gradient(135deg, #060b14 0%, #0b1936 55%, #0039a6 100%);
+      padding: 60px 64px 52px;
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 88, 255, 0.28);
+      border: 1px solid rgba(125, 211, 252, 0.4);
+      color: #bae6fd;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+      padding: 4px 13px;
+      border-radius: 999px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: 36px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.6px;
+      margin-bottom: 14px;
+      line-height: 1.22;
+      max-width: 880px;
+    }
+    .hero h1 span {
+      color: #7dd3fc;
+      font-family: var(--mono);
+    }
+    .hero-sub {
+      font-size: 16.5px;
+      color: rgba(255,255,255,0.8);
+      max-width: 820px;
+      line-height: 1.62;
+    }
+    .hero-meta {
+      display: flex;
+      gap: 36px;
+      margin-top: 34px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      flex-wrap: wrap;
+    }
+    .meta-pill { display: flex; flex-direction: column; gap: 3px; }
+    .meta-pill .lbl {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+    }
+    .meta-pill .val {
+      font-size: 13px;
+      color: #fff;
+      font-weight: 600;
+      font-family: var(--mono);
+    }
+    .meta-pill .val.green { color: #34d399; }
+    .meta-pill .val.cyan { color: #7dd3fc; }
+
+    /* Main Container */
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 48px 48px 96px;
+    }
+    .section { margin-bottom: 60px; }
+    .sec-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .sec-label::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    h2 {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--n-900);
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+    h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--n-800);
+      margin-bottom: 8px;
+    }
+    p { color: var(--n-700); margin-bottom: 12px; }
+    p:last-child { margin-bottom: 0; }
+
+    /* Cards & Grids */
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .card-pillar-helm { border-top: 4px solid var(--blue); }
+    .card-pillar-mcp  { border-top: 4px solid var(--purple); }
+    .card-pillar-aoe  { border-top: 4px solid var(--green-bright); }
+
+    .pillar-tag {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .tag-blue   { background: var(--blue-light); color: var(--blue-dark); }
+    .tag-purple { background: var(--purple-light); color: var(--purple); }
+    .tag-green  { background: var(--green-light); color: var(--green); }
+    .tag-amber  { background: var(--gold-light); color: var(--gold); }
+
+    /* SVG Diagram Containers */
+    .diagram-frame {
+      background: var(--n-950);
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 24px;
+      margin: 20px 0 28px;
+      box-shadow: var(--shadow-md);
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--n-300);
+      font-size: 12px;
+      font-family: var(--mono);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .diagram-caption strong { color: #fff; font-family: var(--font); font-size: 13px; }
+    svg { width: 100%; height: auto; display: block; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      background: var(--white);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    thead th {
+      background: var(--n-900);
+      color: #fff;
+      font-weight: 600;
+      font-size: 11.5px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 12px 16px;
+      text-align: left;
+    }
+    tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--n-700);
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:nth-child(even) td { background: #fbfcfe; }
+    tbody tr:hover td { background: var(--blue-light); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: var(--n-050);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--n-900);
+    }
+    pre {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      background: var(--n-950);
+      color: #e2e8f0;
+      padding: 18px 22px;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      line-height: 1.7;
+      border: 1px solid #1e293b;
+    }
+    pre .c { color: #64748b; }
+    pre .k { color: #7dd3fc; }
+    pre .s { color: #a7f3d0; }
+    pre .p { color: #fcd34d; }
+
+    .callout {
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin: 18px 0;
+      font-size: 13.5px;
+      background: var(--blue-light);
+      border-left: 4px solid var(--blue);
+      color: var(--n-900);
+    }
+    .callout.green {
+      background: var(--green-light);
+      border-left-color: var(--green-bright);
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--n-500);
+      font-size: 12px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+    }
+
+    @media (max-width: 960px) {
+      .hero { padding: 40px 24px; }
+      .page { padding: 32px 20px 64px; }
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Shell -->
+  <div class="shell">
+    <span class="shell-mark">⚓ HELM</span>
+    <span class="shell-suite">cli2cli Open-Source Ecosystem</span>
+    <div class="shell-div"></div>
+    <span class="shell-name">v0.2.0 · Spec &amp; Architecture Report</span>
+    <nav class="shell-nav">
+      <a href="#pillars">3 Pillars</a>
+      <a href="#architecture-svg">System Architecture</a>
+      <a href="#state-svg">4-State &amp; Ring Buffer</a>
+      <a href="#sequence-svg">HITL &amp; Helm Link Flow</a>
+      <a href="#comparison">vs. Herdr</a>
+      <a href="#cli-reference">CLI &amp; MCP Reference</a>
+    </nav>
+  </div>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-eyebrow">⚡ Open-Source Agent-Native Terminal Runtime · MIT License</div>
+    <h1><span>cli2cli-helm</span> &amp; The 3-Pillar Process Orchestration Stack</h1>
+    <p class="hero-sub">
+      A complete, vendor-neutral open-source alternative and superset to <code>Herdr</code> and <code>tmux</code>.
+      Instead of trapping AI coding agents behind stateless HTTP wrappers, <strong>cli2cli</strong> hosts real interactive
+      developer CLIs (Claude Code, Gemini CLI, Antigravity, Codex, OpenCode) inside persistent pseudo-terminals—bridging
+      local multi-pane multiplexing, MCP agent-to-agent piping, and mobile Human-in-the-Loop governance.
+    </p>
+    <div class="hero-meta">
+      <div class="meta-pill">
+        <span class="lbl">Pillar 1 · Runtime &amp; Multiplexer</span>
+        <span class="val cyan">cli2cli-helm (c2c)</span>
+      </div>
+      <div class="meta-pill">
+        <span class="lbl">Pillar 2 · Protocol Bridge</span>
+        <span class="val">cli2cli-mcp (6 Tools)</span>
+      </div>
+      <div class="meta-pill">
+        <span class="lbl">Pillar 3 · Outward Command Center</span>
+        <span class="val green">cli2cli-aoe (Mobile + SSE)</span>
+      </div>
+      <div class="meta-pill">
+        <span class="lbl">IPC Transport</span>
+        <span class="val">\\.\pipe\cli2cli-helm</span>
+      </div>
+      <div class="meta-pill">
+        <span class="lbl">State Engine</span>
+        <span class="val green">OSC 7501 + Regex + Idle</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <!-- SECTION 1: THE 3 OPEN-SOURCE PILLARS -->
+    <section class="section" id="pillars">
+      <div class="sec-label">01 · Ecosystem Topology</div>
+      <h2>The Three Open-Source Pillars</h2>
+      <p>
+        To make the entire stack 100% free, open-source, and immediately usable by any developer, the architecture is
+        cleanly divided into three modular pillars with zero hardcoded personas or proprietary lock-in:
+      </p>
+
+      <div class="grid-3" style="margin-top: 20px;">
+        <div class="card card-pillar-helm">
+          <span class="pillar-tag tag-blue">PILLAR 1 · THE SHIP'S BRIDGE</span>
+          <h3><code>cli2cli-helm</code></h3>
+          <p>
+            <strong>Persistent PTY Daemon &amp; Terminal Multiplexer.</strong> Runs <code>helm-daemon</code> in the background
+            so closing your terminal or restarting an IDE never kills active agents. Includes the multi-pane TUI cockpit
+            (Single, Split-2, Grid-4), the <code>c2c</code> JSON CLI, and <strong>Helm Link</strong> peer discovery.
+          </p>
+        </div>
+
+        <div class="card card-pillar-mcp">
+          <span class="pillar-tag tag-purple">PILLAR 2 · THE ENGINE ROOM</span>
+          <h3><code>cli2cli-mcp</code></h3>
+          <p>
+            <strong>Stateless MCP Protocol Adapter.</strong> Exposes 6 standard Model Context Protocol tools
+            (<code>spawn</code>, <code>read</code>, <code>write</code>, <code>wait</code>, <code>list</code>, <code>terminate</code>)
+            connected to <code>helm-daemon</code>. Enables any upstream LLM to orchestrate sibling CLI agents with zero polling.
+          </p>
+        </div>
+
+        <div class="card card-pillar-aoe">
+          <span class="pillar-tag tag-green">PILLAR 3 · OUTWARD COMMAND CENTER</span>
+          <h3><code>cli2cli-aoe</code></h3>
+          <p>
+            <strong>Remote HITL Governance &amp; Live Telemetry.</strong> Routes <code>BLOCKED</code> confirmation prompts
+            to your phone (Telegram, Slack, Webhook) with inline <strong>Approve / Reject</strong> buttons, an optional
+            bring-your-own-prompt AI Risk Briefer (<code>summarizer.py</code>), and a live SSE web dashboard.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: MASTER ARCHITECTURE SVG -->
+    <section class="section" id="architecture-svg">
+      <div class="sec-label">02 · Master System Architecture (Embedded SVG)</div>
+      <h2>How the 3 Pillars Connect Over Named Pipe IPC</h2>
+      <p>
+        Unlike v0.1—where PTY processes lived inside a single ephemeral MCP <code>stdio</code> server—<code>helm-daemon</code>
+        is now the persistent single source of truth. Multiple consumers (the local TUI cockpit, upstream MCP hosts, sibling
+        CLI agents, and the outward AOE command center) attach concurrently without stealing bytes from each other.
+      </p>
+
+      <div class="diagram-frame">
+        <div class="diagram-caption">
+          <strong>Figure 1 — End-to-End Process-Level Orchestration &amp; Multiplexing Architecture</strong>
+          <span>IPC: \\.\pipe\cli2cli-helm (Win32) · ~/.cli2cli/helm.sock (POSIX)</span>
+        </div>
+
+        <svg viewBox="0 0 1080 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="cli2cli Master Architecture Diagram">
+          <defs>
+            <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#0b1325" />
+              <stop offset="100%" stop-color="#070d19" />
+            </linearGradient>
+            <linearGradient id="pipeGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#0058ff" />
+              <stop offset="50%" stop-color="#00b4d8" />
+              <stop offset="100%" stop-color="#10b981" />
+            </linearGradient>
+            <marker id="arrowCyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+            </marker>
+            <marker id="arrowGreen" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399" />
+            </marker>
+            <marker id="arrowPurple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#a78bfa" />
+            </marker>
+            <marker id="arrowAmber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#fbbf24" />
+            </marker>
+          </defs>
+
+          <!-- Background Canvas -->
+          <rect width="1080" height="650" rx="8" fill="url(#bgGrad)" />
+
+          <!-- ==================== TOP ROW: 3 CONSUMER PLANES ==================== -->
+
+          <!-- Consumer 1: cli2cli-helm TUI & CLI -->
+          <rect x="30" y="24" width="320" height="155" rx="8" fill="#0f1d36" stroke="#3b82f6" stroke-width="1.8" />
+          <rect x="30" y="24" width="320" height="28" rx="8" fill="#1d4ed8" />
+          <text x="44" y="43" fill="#ffffff" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700">⚓ PILLAR 1: cli2cli-helm (TUI &amp; c2c CLI)</text>
+          <text x="46" y="72" fill="#93c5fd" font-family="Consolas, monospace" font-size="11.5" font-weight="700">HelmCockpit (Interactive Multiplexer)</text>
+          <text x="46" y="92" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Views: [v] SINGLE | SPLIT-2 | GRID-4</text>
+          <text x="46" y="110" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Instant [y]/[n] HITL keys &amp; [r] Raw mode</text>
+          <text x="46" y="128" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• [q] Detach (agents stay alive in daemon)</text>
+          <rect x="46" y="140" width="288" height="26" rx="4" fill="#091224" stroke="#1e3a8a" />
+          <text x="56" y="157" fill="#7dd3fc" font-family="Consolas, monospace" font-size="10.5">$ c2c list | spawn | read | send | wait</text>
+
+          <!-- Consumer 2: cli2cli-mcp Bridge -->
+          <rect x="380" y="24" width="320" height="155" rx="8" fill="#191336" stroke="#8b5cf6" stroke-width="1.8" />
+          <rect x="380" y="24" width="320" height="28" rx="8" fill="#5b21b6" />
+          <text x="394" y="43" fill="#ffffff" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700">🔌 PILLAR 2: cli2cli-mcp (Protocol Bridge)</text>
+          <text x="396" y="72" fill="#c4b5fd" font-family="Consolas, monospace" font-size="11.5" font-weight="700">Stateless MCP Server (stdio / SSE)</text>
+          <text x="396" y="92" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Connects Claude, Antigravity, Cursor, AOE</text>
+          <text x="396" y="110" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Auto-spawns helm-daemon on first tool call</text>
+          <text x="396" y="128" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Named consumer cursor (no buffer theft)</text>
+          <rect x="396" y="140" width="288" height="26" rx="4" fill="#0e0a24" stroke="#4c1d95" />
+          <text x="406" y="157" fill="#ddd6fe" font-family="Consolas, monospace" font-size="10.5">spawn | read | write | wait | list | kill</text>
+
+          <!-- Consumer 3: cli2cli-aoe Command Center -->
+          <rect x="730" y="24" width="320" height="155" rx="8" fill="#0c2625" stroke="#10b981" stroke-width="1.8" />
+          <rect x="730" y="24" width="320" height="28" rx="8" fill="#047857" />
+          <text x="744" y="43" fill="#ffffff" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700">📡 PILLAR 3: cli2cli-aoe (Outward Comms)</text>
+          <text x="746" y="72" fill="#6ee7b7" font-family="Consolas, monospace" font-size="11.5" font-weight="700">Mobile HITL Gate &amp; Live Observability</text>
+          <text x="746" y="92" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Telegram / Slack / Webhook [Allow / Deny]</text>
+          <text x="746" y="110" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• summarizer.py: Raw ($0) or BYO-Prompt AI</text>
+          <text x="746" y="128" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Live SSE Event Dashboard &amp; SQLite Audit</text>
+          <rect x="746" y="140" width="288" height="26" rx="4" fill="#061717" stroke="#065f46" />
+          <text x="756" y="157" fill="#a7f3d0" font-family="Consolas, monospace" font-size="10.5">[ ✅ Approve (y) ]     [ ❌ Reject (n) ]</text>
+
+          <!-- ==================== IPC BUS BAR ==================== -->
+          <line x1="190" y1="180" x2="190" y2="218" stroke="#38bdf8" stroke-width="2.2" marker-end="url(#arrowCyan)" marker-start="url(#arrowCyan)" />
+          <line x1="540" y1="180" x2="540" y2="218" stroke="#a78bfa" stroke-width="2.2" marker-end="url(#arrowPurple)" marker-start="url(#arrowPurple)" />
+          <line x1="890" y1="180" x2="890" y2="218" stroke="#34d399" stroke-width="2.2" marker-end="url(#arrowGreen)" marker-start="url(#arrowGreen)" />
+
+          <rect x="30" y="222" width="1020" height="36" rx="6" fill="url(#pipeGrad)" />
+          <text x="540" y="245" text-anchor="middle" fill="#ffffff" font-family="Consolas, monospace" font-size="13" font-weight="700">
+            NDJSON-RPC 2.0 IPC BUS · \\.\pipe\cli2cli-helm (Push Events: session.output &amp; session.state_changed)
+          </text>
+
+          <!-- ==================== MIDDLE: HELM-DAEMON CORE ==================== -->
+          <line x1="540" y1="258" x2="540" y2="288" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrowCyan)" />
+
+          <rect x="30" y="292" width="1020" height="158" rx="10" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
+          <text x="50" y="318" fill="#38bdf8" font-family="Consolas, monospace" font-size="14" font-weight="700">
+            ⚙️ helm-daemon (Persistent Background Host · src/helm-daemon.ts)
+          </text>
+
+          <!-- Sub-box A: Cursor Ring Buffer -->
+          <rect x="50" y="332" width="310" height="102" rx="6" fill="#1e293b" stroke="#334155" />
+          <text x="64" y="354" fill="#f8fafc" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700">1. Non-Destructive Cursor Ring Buffer</text>
+          <text x="64" y="374" fill="#94a3b8" font-family="Consolas, monospace" font-size="11">MAX_BUFFER_CHARS = 500,000</text>
+          <text x="64" y="392" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Monotonic writeCursor per session</text>
+          <text x="64" y="410" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Independent consumerCursors Map</text>
+          <text x="64" y="426" fill="#38bdf8" font-family="Segoe UI, sans-serif" font-size="10.5">→ TUI, MCP &amp; AOE never steal each other's output</text>
+
+          <!-- Sub-box B: 4-State Engine -->
+          <rect x="385" y="332" width="310" height="102" rx="6" fill="#1e293b" stroke="#334155" />
+          <text x="399" y="354" fill="#f8fafc" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700">2. Deterministic 4-State Engine</text>
+          <text x="399" y="374" fill="#4ade80" font-family="Consolas, monospace" font-size="11">🟢 WORKING  🔵 IDLE  ⚠️ BLOCKED  ⚫ EXITED</text>
+          <text x="399" y="392" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Parses OSC 7501 (\e]7501;state=...\a)</text>
+          <text x="399" y="410" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Fallback ANSI regex ((y/n), approve, ❯)</text>
+          <text x="399" y="426" fill="#fbbf24" font-family="Segoe UI, sans-serif" font-size="10.5">→ 3,000ms quiescence timer flips WORKING → IDLE</text>
+
+          <!-- Sub-box C: Event-Driven Wait -->
+          <rect x="720" y="332" width="310" height="102" rx="6" fill="#1e293b" stroke="#334155" />
+          <text x="734" y="354" fill="#f8fafc" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700">3. Zero-Polling Wait &amp; Helm Link</text>
+          <text x="734" y="374" fill="#c084fc" font-family="Consolas, monospace" font-size="11">wait_cli_session(until, pattern)</text>
+          <text x="734" y="392" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Resolves on EventEmitter state/data</text>
+          <text x="734" y="410" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">• Injects HELM_SLOT, HELM_SESSION_ID</text>
+          <text x="734" y="426" fill="#34d399" font-family="Segoe UI, sans-serif" font-size="10.5">→ 1-turn agent-to-agent synchronization</text>
+
+          <!-- ==================== BOTTOM: CONPTY AGENT SLOTS ==================== -->
+          <line x1="180" y1="450" x2="180" y2="492" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrowCyan)" />
+          <line x1="540" y1="450" x2="540" y2="492" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrowCyan)" />
+          <line x1="900" y1="450" x2="900" y2="492" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrowCyan)" />
+
+          <!-- Slot 1 -->
+          <rect x="40" y="496" width="280" height="126" rx="8" fill="#091526" stroke="#22c55e" stroke-width="1.8" />
+          <text x="56" y="520" fill="#4ade80" font-family="Consolas, monospace" font-size="12" font-weight="700">SLOT 1 · claude (🟢 WORKING)</text>
+          <text x="56" y="540" fill="#94a3b8" font-family="Consolas, monospace" font-size="10.5">ConPTY 120x40 · PID 18420</text>
+          <text x="56" y="558" fill="#e2e8f0" font-family="Segoe UI, sans-serif" font-size="11">Refactors auth middleware &amp; spawns</text>
+          <text x="56" y="574" fill="#e2e8f0" font-family="Segoe UI, sans-serif" font-size="11">Playwright verification in Slot 2</text>
+          <text x="56" y="604" fill="#38bdf8" font-family="Consolas, monospace" font-size="10.5">env: HELM_SLOT=1</text>
+
+          <!-- Slot 2 -->
+          <rect x="400" y="496" width="280" height="126" rx="8" fill="#091526" stroke="#f59e0b" stroke-width="1.8" />
+          <text x="416" y="520" fill="#fbbf24" font-family="Consolas, monospace" font-size="12" font-weight="700">SLOT 2 · agy / gemini (⚠️ BLOCKED)</text>
+          <text x="416" y="540" fill="#94a3b8" font-family="Consolas, monospace" font-size="10.5">ConPTY 120x40 · PID 22910</text>
+          <text x="416" y="558" fill="#fde68a" font-family="Consolas, monospace" font-size="11">"Apply schema migration? (y/n):"</text>
+          <text x="416" y="576" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="11">Halts &amp; fires HITL alert to TUI + AOE</text>
+          <text x="416" y="604" fill="#38bdf8" font-family="Consolas, monospace" font-size="10.5">env: HELM_SLOT=2</text>
+
+          <!-- Slot 3..8 -->
+          <rect x="760" y="496" width="280" height="126" rx="8" fill="#091526" stroke="#06b6d4" stroke-width="1.8" />
+          <text x="776" y="520" fill="#22d3ee" font-family="Consolas, monospace" font-size="12" font-weight="700">SLOT 3..8 · shell / codex (🔵 IDLE)</text>
+          <text x="776" y="540" fill="#94a3b8" font-family="Consolas, monospace" font-size="10.5">ConPTY 120x40 · PID 31004</text>
+          <text x="776" y="558" fill="#e2e8f0" font-family="Segoe UI, sans-serif" font-size="11">Finished test suite (0 bytes &gt; 3s)</text>
+          <text x="776" y="574" fill="#e2e8f0" font-family="Segoe UI, sans-serif" font-size="11">Ready for next command injection</text>
+          <text x="776" y="604" fill="#38bdf8" font-family="Consolas, monospace" font-size="10.5">env: HELM_SLOT=3..8</text>
+
+          <!-- Helm Link Peer Arrows -->
+          <line x1="322" y1="560" x2="398" y2="560" stroke="#fbbf24" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrowAmber)" marker-start="url(#arrowAmber)" />
+          <text x="360" y="550" text-anchor="middle" fill="#fbbf24" font-family="Consolas, monospace" font-size="10" font-weight="700">Helm Link</text>
+
+          <line x1="682" y1="560" x2="758" y2="560" stroke="#fbbf24" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrowAmber)" marker-start="url(#arrowAmber)" />
+          <text x="720" y="550" text-anchor="middle" fill="#fbbf24" font-family="Consolas, monospace" font-size="10" font-weight="700">Helm Link</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- SECTION 3: 4-STATE MACHINE & CURSOR RING BUFFER SVG -->
+    <section class="section" id="state-svg">
+      <div class="sec-label">03 · Internal Mechanics (Embedded SVG)</div>
+      <h2>The 4-State Engine &amp; Non-Destructive Cursor Ring Buffer</h2>
+      <p>
+        Two core innovations power <code>helm-daemon</code>: (1) a dual-signal state machine that combines Herdr's
+        <code>OSC 7501</code> escape protocol with our zero-config ANSI regex heuristic, and (2) an offset-indexed
+        ring buffer so multiple tools can read the same terminal stream without race conditions.
+      </p>
+
+      <div class="diagram-frame">
+        <div class="diagram-caption">
+          <strong>Figure 2 — Left: Deterministic 4-State Finite Automaton · Right: Multi-Consumer Cursor Ring Buffer</strong>
+          <span>src/helm-daemon.ts</span>
+        </div>
+
+        <svg viewBox="0 0 1080 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="4-State Machine and Ring Buffer Diagram">
+          <defs>
+            <marker id="arrW" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
+            </marker>
+            <marker id="arrY" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#fbbf24" />
+            </marker>
+            <marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#4ade80" />
+            </marker>
+          </defs>
+
+          <rect width="1080" height="420" rx="8" fill="#080f1e" />
+
+          <!-- Divider Line -->
+          <line x1="540" y1="20" x2="540" y2="400" stroke="#1e293b" stroke-width="2" stroke-dasharray="6,6" />
+
+          <!-- ================= LEFT SIDE: 4-STATE MACHINE ================= -->
+          <text x="30" y="36" fill="#38bdf8" font-family="Segoe UI, sans-serif" font-size="13" font-weight="700">
+            A. 4-STATE SESSION LIFECYCLE (OSC 7501 + REGEX + QUIESCENCE)
+          </text>
+
+          <!-- State: WORKING -->
+          <rect x="50" y="90" width="170" height="72" rx="36" fill="#062e1e" stroke="#22c55e" stroke-width="2.2" />
+          <text x="135" y="122" text-anchor="middle" fill="#4ade80" font-family="Consolas, monospace" font-size="14" font-weight="700">🟢 WORKING</text>
+          <text x="135" y="142" text-anchor="middle" fill="#a7f3d0" font-family="Segoe UI, sans-serif" font-size="10.5">Active PTY I/O stream</text>
+
+          <!-- State: IDLE -->
+          <rect x="320" y="90" width="170" height="72" rx="36" fill="#082836" stroke="#06b6d4" stroke-width="2.2" />
+          <text x="405" y="122" text-anchor="middle" fill="#22d3ee" font-family="Consolas, monospace" font-size="14" font-weight="700">🔵 IDLE</text>
+          <text x="405" y="142" text-anchor="middle" fill="#bae6fd" font-family="Segoe UI, sans-serif" font-size="10.5">Quiescent &gt; 3,000ms</text>
+
+          <!-- State: BLOCKED -->
+          <rect x="50" y="270" width="170" height="72" rx="36" fill="#3b2106" stroke="#f59e0b" stroke-width="2.2" />
+          <text x="135" y="302" text-anchor="middle" fill="#fbbf24" font-family="Consolas, monospace" font-size="14" font-weight="700">⚠️ BLOCKED</text>
+          <text x="135" y="322" text-anchor="middle" fill="#fde68a" font-family="Segoe UI, sans-serif" font-size="10.5">Waiting on HITL input</text>
+
+          <!-- State: EXITED -->
+          <rect x="320" y="270" width="170" height="72" rx="36" fill="#27121b" stroke="#f43f5e" stroke-width="2.2" />
+          <text x="405" y="302" text-anchor="middle" fill="#fb7185" font-family="Consolas, monospace" font-size="14" font-weight="700">⚫ EXITED</text>
+          <text x="405" y="322" text-anchor="middle" fill="#fecdd3" font-family="Segoe UI, sans-serif" font-size="10.5">Process terminated</text>
+
+          <!-- Transitions -->
+          <!-- WORKING -> IDLE -->
+          <path d="M 222 112 L 316 112" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#arrW)" />
+          <text x="270" y="103" text-anchor="middle" fill="#94a3b8" font-family="Consolas, monospace" font-size="10">3s silence / OSC idle</text>
+
+          <!-- IDLE -> WORKING -->
+          <path d="M 316 142 L 222 142" stroke="#4ade80" stroke-width="1.8" marker-end="url(#arrG)" />
+          <text x="270" y="158" text-anchor="middle" fill="#4ade80" font-family="Consolas, monospace" font-size="10">stdin / stdout data</text>
+
+          <!-- WORKING -> BLOCKED -->
+          <path d="M 110 164 L 110 266" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrY)" />
+          <text x="82" y="212" text-anchor="end" fill="#fbbf24" font-family="Consolas, monospace" font-size="10">OSC 7501 blocked</text>
+          <text x="82" y="226" text-anchor="end" fill="#fbbf24" font-family="Consolas, monospace" font-size="10">or /(y\/n)|approve/</text>
+
+          <!-- BLOCKED -> WORKING -->
+          <path d="M 160 266 L 160 164" stroke="#4ade80" stroke-width="2" marker-end="url(#arrG)" />
+          <text x="168" y="218" fill="#4ade80" font-family="Consolas, monospace" font-size="10">session.write("y\r")</text>
+
+          <!-- WORKING/IDLE -> EXITED -->
+          <path d="M 405 164 L 405 266" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#arrW)" />
+          <text x="415" y="218" fill="#fda4af" font-family="Consolas, monospace" font-size="10">proc.onExit(code)</text>
+
+          <!-- ================= RIGHT SIDE: CURSOR RING BUFFER ================= -->
+          <text x="570" y="36" fill="#38bdf8" font-family="Segoe UI, sans-serif" font-size="13" font-weight="700">
+            B. NON-DESTRUCTIVE CURSOR RING BUFFER (500KB RETAINED)
+          </text>
+
+          <!-- Ring Buffer Tape -->
+          <rect x="575" y="110" width="470" height="64" rx="6" fill="#0f172a" stroke="#475569" stroke-width="2" />
+          <rect x="575" y="110" width="110" height="64" rx="6" fill="#1e293b" />
+          <rect x="685" y="110" width="150" height="64" fill="#172554" />
+          <rect x="835" y="110" width="140" height="64" fill="#064e3b" />
+          <rect x="975" y="110" width="70" height="64" rx="6" fill="#3b0764" />
+
+          <text x="630" y="146" text-anchor="middle" fill="#94a3b8" font-family="Consolas, monospace" font-size="11">Old Chunks</text>
+          <text x="760" y="146" text-anchor="middle" fill="#93c5fd" font-family="Consolas, monospace" font-size="11">Build Output...</text>
+          <text x="905" y="146" text-anchor="middle" fill="#6ee7b7" font-family="Consolas, monospace" font-size="11">Test Logs...</text>
+          <text x="1010" y="146" text-anchor="middle" fill="#f0abfc" font-family="Consolas, monospace" font-size="11">(y/n)?</text>
+
+          <!-- Write Head -->
+          <line x1="1045" y1="70" x2="1045" y2="108" stroke="#f43f5e" stroke-width="2.5" marker-end="url(#arrW)" />
+          <text x="1045" y="62" text-anchor="end" fill="#fb7185" font-family="Consolas, monospace" font-size="11" font-weight="700">writeCursor = 48,920</text>
+
+          <!-- Consumer 1 Pointer: MCP Client -->
+          <line x1="685" y1="230" x2="685" y2="176" stroke="#a78bfa" stroke-width="2" marker-end="url(#arrW)" />
+          <rect x="575" y="232" width="210" height="44" rx="5" fill="#191336" stroke="#8b5cf6" />
+          <text x="587" y="252" fill="#c4b5fd" font-family="Consolas, monospace" font-size="11" font-weight="700">MCP Client Cursor: 14,200</text>
+          <text x="587" y="268" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="10">Reads [14,200 .. 48,920] cleanly</text>
+
+          <!-- Consumer 2 Pointer: AOE Gateway -->
+          <line x1="835" y1="305" x2="835" y2="176" stroke="#34d399" stroke-width="2" marker-end="url(#arrG)" />
+          <rect x="730" y="307" width="210" height="44" rx="5" fill="#0c2625" stroke="#10b981" />
+          <text x="742" y="327" fill="#6ee7b7" font-family="Consolas, monospace" font-size="11" font-weight="700">AOE Gateway Cursor: 32,100</text>
+          <text x="742" y="343" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="10">Reads [32,100 .. 48,920] cleanly</text>
+
+          <!-- Consumer 3 Pointer: Helm TUI -->
+          <line x1="975" y1="230" x2="975" y2="176" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrY)" />
+          <rect x="855" y="232" width="190" height="44" rx="5" fill="#0f1d36" stroke="#3b82f6" />
+          <text x="867" y="252" fill="#7dd3fc" font-family="Consolas, monospace" font-size="11" font-weight="700">Helm TUI Cursor: 45,000</text>
+          <text x="867" y="268" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="10">Live push + scrollback</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- SECTION 4: SEQUENCE DIAGRAM SVG (ZERO-POLLING WAIT + MOBILE HITL) -->
+    <section class="section" id="sequence-svg">
+      <div class="sec-label">04 · End-to-End Execution Flow (Embedded SVG)</div>
+      <h2>Zero-Polling Orchestration &amp; Mobile HITL Approval Sequence</h2>
+      <p>
+        Here is what happens when an upstream agent (or human) spawns a task in Slot 1, waits event-driven via
+        <code>wait_cli_session</code>, hits an interactive confirmation gate, and gets approved from a phone via
+        <code>cli2cli-aoe</code>—all in milliseconds and at <strong>$0.00 orchestration token cost</strong>.
+      </p>
+
+      <div class="diagram-frame">
+        <div class="diagram-caption">
+          <strong>Figure 3 — Sequence Diagram: Spawn → Event-Driven Wait → Mobile HITL Gate → Completion</strong>
+          <span>Latency: ~42ms ConPTY spawn · ~0.08ms HITL regex/OSC match</span>
+        </div>
+
+        <svg viewBox="0 0 1080 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence Diagram of HITL and Wait Flow">
+          <defs>
+            <marker id="seqB" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+            </marker>
+            <marker id="seqY" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#fbbf24" />
+            </marker>
+            <marker id="seqG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399" />
+            </marker>
+          </defs>
+
+          <rect width="1080" height="500" rx="8" fill="#070d19" />
+
+          <!-- Lifelines -->
+          <!-- 1: Operator / Mobile (AOE) -->
+          <rect x="40" y="20" width="160" height="40" rx="6" fill="#047857" />
+          <text x="120" y="45" text-anchor="middle" fill="#fff" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700">📱 Mobile / AOE Gate</text>
+          <line x1="120" y1="60" x2="120" y2="475" stroke="#1e293b" stroke-width="2" stroke-dasharray="5,5" />
+
+          <!-- 2: MCP Client / TUI -->
+          <rect x="290" y="20" width="160" height="40" rx="6" fill="#5b21b6" />
+          <text x="370" y="45" text-anchor="middle" fill="#fff" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700">🔌 MCP / Helm TUI</text>
+          <line x1="370" y1="60" x2="370" y2="475" stroke="#1e293b" stroke-width="2" stroke-dasharray="5,5" />
+
+          <!-- 3: helm-daemon -->
+          <rect x="560" y="20" width="160" height="40" rx="6" fill="#1d4ed8" />
+          <text x="640" y="45" text-anchor="middle" fill="#fff" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700">⚙️ helm-daemon</text>
+          <line x1="640" y1="60" x2="640" y2="475" stroke="#1e293b" stroke-width="2" stroke-dasharray="5,5" />
+
+          <!-- 4: ConPTY Child CLI -->
+          <rect x="840" y="20" width="180" height="40" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
+          <text x="930" y="45" text-anchor="middle" fill="#7dd3fc" font-family="Consolas, monospace" font-size="12" font-weight="700">🖥️ ConPTY Slot 1</text>
+          <line x1="930" y1="60" x2="930" y2="475" stroke="#1e293b" stroke-width="2" stroke-dasharray="5,5" />
+
+          <!-- Step 1: spawn_cli_session -->
+          <line x1="370" y1="95" x2="635" y2="95" stroke="#38bdf8" stroke-width="2" marker-end="url(#seqB)" />
+          <text x="502" y="88" text-anchor="middle" fill="#7dd3fc" font-family="Consolas, monospace" font-size="11">1. spawn_cli_session("claude", "deploy")</text>
+
+          <line x1="640" y1="110" x2="925" y2="110" stroke="#38bdf8" stroke-width="2" marker-end="url(#seqB)" />
+          <text x="785" y="103" text-anchor="middle" fill="#94a3b8" font-family="Consolas, monospace" font-size="10.5">pty.spawn() + HELM_SLOT=1</text>
+
+          <!-- Step 2: wait_cli_session (Blocks without polling) -->
+          <line x1="370" y1="150" x2="635" y2="150" stroke="#38bdf8" stroke-width="2" marker-end="url(#seqB)" />
+          <text x="502" y="143" text-anchor="middle" fill="#c4b5fd" font-family="Consolas, monospace" font-size="11">2. wait_cli_session(slot=1, until=["blocked","exited"])</text>
+
+          <!-- Step 3: Child emits prompt / OSC 7501 -->
+          <line x1="930" y1="200" x2="645" y2="200" stroke="#fbbf24" stroke-width="2" marker-end="url(#seqY)" />
+          <text x="785" y="192" text-anchor="middle" fill="#fde68a" font-family="Consolas, monospace" font-size="11">3. stdout: "\e]7501;state=blocked\a Proceed? (y/n):"</text>
+
+          <!-- Step 4: State transition resolves wait & alerts AOE -->
+          <rect x="570" y="214" width="140" height="26" rx="4" fill="#3b2106" stroke="#f59e0b" />
+          <text x="640" y="231" text-anchor="middle" fill="#fbbf24" font-family="Consolas, monospace" font-size="10.5">State → ⚠️ BLOCKED</text>
+
+          <line x1="635" y1="255" x2="375" y2="255" stroke="#fbbf24" stroke-width="2" marker-end="url(#seqY)" />
+          <text x="502" y="248" text-anchor="middle" fill="#fbbf24" font-family="Consolas, monospace" font-size="11">4a. Resolves wait_cli_session (matched="blocked")</text>
+
+          <line x1="635" y1="285" x2="125" y2="285" stroke="#fbbf24" stroke-width="2" marker-end="url(#seqY)" />
+          <text x="375" y="278" text-anchor="middle" fill="#fde68a" font-family="Consolas, monospace" font-size="11">4b. summarizer.py → Pushes [ ✅ Approve ] [ ❌ Reject ]</text>
+
+          <!-- Step 5: Operator taps Approve -->
+          <line x1="120" y1="335" x2="635" y2="335" stroke="#34d399" stroke-width="2.2" marker-end="url(#seqG)" />
+          <text x="375" y="327" text-anchor="middle" fill="#6ee7b7" font-family="Consolas, monospace" font-size="11" font-weight="700">5. Operator taps [ ✅ Approve ] (or presses 'y' in TUI)</text>
+
+          <line x1="640" y1="355" x2="925" y2="355" stroke="#34d399" stroke-width="2" marker-end="url(#seqG)" />
+          <text x="785" y="348" text-anchor="middle" fill="#6ee7b7" font-family="Consolas, monospace" font-size="11">6. pty.write("y\r") · State → 🟢 WORKING</text>
+
+          <!-- Step 7: Completion -->
+          <line x1="930" y1="410" x2="645" y2="410" stroke="#34d399" stroke-width="2" marker-end="url(#seqG)" />
+          <text x="785" y="402" text-anchor="middle" fill="#a7f3d0" font-family="Consolas, monospace" font-size="11">7. stdout: "Deploy complete!" · exitCode=0</text>
+
+          <line x1="635" y1="440" x2="125" y2="440" stroke="#34d399" stroke-width="2" marker-end="url(#seqG)" />
+          <text x="375" y="432" text-anchor="middle" fill="#6ee7b7" font-family="Consolas, monospace" font-size="11">8. State → ⚫ EXITED(0) · Logged to SQLite &amp; SSE Dashboard</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- SECTION 5: HEAD-TO-HEAD COMPARISON VS HERDR & TMUX -->
+    <section class="section" id="comparison">
+      <div class="sec-label">05 · Competitive Matrix</div>
+      <h2>How <code>cli2cli</code> (Helm + MCP + AOE) Compares to <code>Herdr</code> &amp; <code>tmux</code></h2>
+      <p>
+        By combining local multiplexing (<code>cli2cli-helm</code>), first-party MCP tooling (<code>cli2cli-mcp</code>),
+        and outward mobile governance (<code>cli2cli-aoe</code>) into a single open-source suite, <code>cli2cli</code>
+        covers the full lifecycle from local terminal panes to mobile approvals.
+      </p>
+
+      <table style="margin-top: 18px;">
+        <thead>
+          <tr>
+            <th>Architectural Dimension</th>
+            <th><code>tmux</code> / Traditional Mux</th>
+            <th><code>Herdr</code> (<code>herdr.dev</code>)</th>
+            <th><code>cli2cli</code> Open-Source Stack (Helm + MCP + AOE)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Persistent Background Daemon</strong></td>
+            <td>Yes (Unix socket only)</td>
+            <td>Yes (<code>herdr-core</code>)</td>
+            <td><strong>Yes (<code>helm-daemon</code> on Windows Named Pipe &amp; POSIX Socket)</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Agent State Tracking</strong></td>
+            <td>None (blind shell panes)</td>
+            <td>4-State via <code>OSC 7501</code> + PTY check</td>
+            <td><strong>Dual 4-State Engine:</strong> <code>OSC 7501</code> protocol <strong>+</strong> zero-config ANSI regex heuristic <strong>+</strong> 3s quiescence timer</td>
+          </tr>
+          <tr>
+            <td><strong>First-Party MCP Server</strong></td>
+            <td>None</td>
+            <td>Community wrapper (<code>herdr-mcp</code>)</td>
+            <td><strong>First-party core pillar (<code>cli2cli-mcp</code>)</strong> with 6 tools including event-driven <code>wait_cli_session</code></td>
+          </tr>
+          <tr>
+            <td><strong>Multi-Consumer Read Safety</strong></td>
+            <td>N/A</td>
+            <td>Socket read API</td>
+            <td><strong>Non-Destructive Cursor Ring Buffer</strong> (TUI, MCP, and AOE read concurrently without stealing bytes)</td>
+          </tr>
+          <tr>
+            <td><strong>Peer-to-Peer Agent Link</strong></td>
+            <td>Manual shell scripting</td>
+            <td><code>Herdr Link</code> / <code>hc</code> CLI</td>
+            <td><strong><code>Helm Link</code>:</strong> Auto-injected <code>HELM_SLOT</code> / <code>HELM_PIPE</code> env vars + <code>c2c send/wait</code> CLI</td>
+          </tr>
+          <tr>
+            <td><strong>Outward Mobile Command Center</strong></td>
+            <td>None (Desktop SSH only)</td>
+            <td>None (Workstation / SSH bound)</td>
+            <td><strong><code>cli2cli-aoe</code> included:</strong> Approve/Reject blocked agents from Telegram/Slack/Webhooks + pluggable AI Briefer + SSE Dashboard</td>
+          </tr>
+          <tr>
+            <td><strong>License &amp; Persona Lock-In</strong></td>
+            <td>Open Source (ISC)</td>
+            <td>Open Source (Apache 2.0)</td>
+            <td><strong>100% Open Source (MIT)</strong> · Vendor-neutral default prompts with bring-your-own persona config</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 6: CLI & MCP REFERENCE -->
+    <section class="section" id="cli-reference">
+      <div class="sec-label">06 · Quick Reference</div>
+      <h2>Using <code>c2c</code> / <code>cli2cli-helm</code>, MCP Tools, and AOE</h2>
+
+      <div class="grid-2" style="margin-top: 18px;">
+        <div>
+          <h3>1. Scriptable CLI &amp; Multiplexer (<code>c2c</code>)</h3>
+          <pre><span class="c"># Launch the 8-slot interactive TUI cockpit</span>
+<span class="k">c2c</span>
+<span class="c"># Inside TUI: [1-8] Slot · [v] Single/Split2/Grid4 · [y/n] Approve/Reject · [q] Detach</span>
+
+<span class="c"># Or drive helm-daemon from scripts / sibling agents (JSON output):</span>
+<span class="k">c2c</span> ping
+<span class="k">c2c</span> spawn claude <span class="s">"Refactor auth.ts and run tests"</span> --slot 1
+<span class="k">c2c</span> wait 1 --until blocked,idle,exited --timeout 60000
+<span class="k">c2c</span> send 1 <span class="s">"y"</span>
+<span class="k">c2c</span> read 1 --tail 2000
+<span class="k">c2c</span> list
+<span class="k">c2c</span> kill 1
+
+<span class="c"># Emit OSC 7501 status directly from inside any child script:</span>
+<span class="k">c2c</span> status blocked</pre>
+        </div>
+
+        <div>
+          <h3>2. Outward Command Center Config (<code>cli2cli-aoe</code>)</h3>
+          <pre><span class="c"># .env configuration in cli2cli-aoe (100% vendor-neutral)</span>
+<span class="p">TELEGRAM_BOT_TOKEN</span>=your_bot_token
+<span class="p">ALLOWED_TELEGRAM_USER_IDS</span>=123456789
+
+<span class="c"># Summarizer Mode:</span>
+<span class="c">#   "raw" = $0 LLM cost, sends clean terminal tail + Approve/Reject buttons</span>
+<span class="c">#   "ai"  = summarizes action &amp; risk via pluggable prompt before alerting</span>
+<span class="p">AOE_SUMMARIZER_MODE</span>=raw
+
+<span class="c"># Optional: Bring your own custom persona prompt file (e.g. custom_briefer.md)</span>
+<span class="c"># Defaults to a neutral DevOps &amp; Security Risk Briefer if left blank.</span>
+<span class="p">AOE_SUMMARIZER_PROMPT_FILE</span>=</pre>
+        </div>
+      </div>
+
+      <div class="callout green" style="margin-top: 24px;">
+        <strong>Verified End-to-End Status:</strong> Both the persistent Named Pipe daemon (<code>dist/helm-daemon.js</code>),
+        the 6-tool MCP server (<code>dist/index.js</code>), the multi-pane TUI / CLI (<code>dist/nucleus.js</code>), and the
+        <code>cli2cli-aoe</code> orchestrator round-trip test (<code>scripts/test_orchestrator.py</code>) are compiled and passing
+        (<code>ORCHESTRATOR TEST PASS [OK]</code>).
+      </div>
+    </section>
+
+    <footer class="footer">
+      <code>cli2cli-helm</code> · <code>cli2cli-mcp</code> · <code>cli2cli-aoe</code> — Open-Source Process-Level Multi-Agent Orchestration Suite (MIT License)
+    </footer>
+
+  </main>
+</body>
+</html>

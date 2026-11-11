@@ -1,18 +1,16 @@
 /**
- * cli2cli-mcp
+ * cli2cli-mcp (src/index.ts)
  *
- * Bi-directional MCP bridge that drives headless interactive AI CLIs
- * (Claude Code, Gemini CLI, or any command) inside a pseudo-terminal.
+ * Bi-directional MCP bridge that connects any MCP host (Claude Code, Gemini CLI,
+ * Antigravity, Cursor, or cli2cli-aoe) to the persistent `cli2cli-helm` daemon.
  *
  * Exposed tools:
- *   - spawn_cli_session     allocate a PTY and launch a CLI
- *   - read_cli_stream       drain buffered output + read HITL/exit state
+ *   - spawn_cli_session     allocate a persistent PTY slot and launch a CLI
+ *   - read_cli_stream       non-destructively read PTY output + 4-state / HITL status
  *   - write_cli_input       feed stdin (confirmations, answers, prompts)
- *   - list_cli_sessions     enumerate live sessions
+ *   - wait_cli_session      block until state change (blocked, idle, exited) or regex match
+ *   - list_cli_sessions     enumerate live sessions across the daemon
  *   - terminate_cli_session kill a session and free resources
- *
- * Target host is Windows (ConPTY); paths and binary resolution are
- * win32-aware but the server also runs on POSIX.
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -22,156 +20,17 @@ import {
   ListToolsRequestSchema,
   type Tool
 } from "@modelcontextprotocol/sdk/types.js";
-import * as pty from "node-pty";
 import { v4 as uuidv4 } from "uuid";
-import { existsSync } from "node:fs";
-import { join, delimiter } from "node:path";
+import { HelmClient } from "./helm-client.js";
 
-const IS_WIN = process.platform === "win32";
-
-/** Bound each session's retained output so a chatty CLI can't grow unbounded. */
-const MAX_BUFFER_CHARS = 200_000;
-
-/**
- * Heuristic for detecting an interactive confirmation prompt in a CLI's
- * output stream. When this matches, the session is flagged so the gateway
- * can surface a Human-in-the-Loop decision instead of hanging forever.
- */
-const HITL_PROMPT_PATTERN =
-  /(\(y\/n\)|\[y\/n\]|yes\/no|approve|confirm|proceed\??|overwrite|are you sure|press enter|choose an option|select an option|❯)/i;
-
-/** Strip ANSI CSI/OSC escape sequences so regex matching works across color codes. */
-// eslint-disable-next-line no-control-regex
-const ANSI_ESCAPE_PATTERN = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]|\].*?(?:\x07|\x1B\\))/g;
-
-function stripAnsi(input: string): string {
-  return input.replace(ANSI_ESCAPE_PATTERN, "");
-}
-
-interface CLISession {
-  id: string;
-  cliType: string;
-  command: string;
-  args: string[];
-  cwd: string;
-  process: pty.IPty;
-  /** Unread output since the last read_cli_stream drain. */
-  buffer: string;
-  /** Rolling plain-text tail used for cross-chunk HITL prompt detection. */
-  recentTail: string;
-  /** Set when HITL_PROMPT_PATTERN last matched and no input has been sent since. */
-  isWaitingForInput: boolean;
-  exitCode: number | null;
-  startedAt: number;
-}
-
-const sessions = new Map<string, CLISession>();
-
-/** Preset commands per known cli_type. `custom` uses caller-supplied command/args. */
-function resolvePreset(
-  cliType: string,
-  initialPrompt: string,
-  command?: string,
-  args?: string[],
-  interactive = true
-): { command: string; args: string[] } {
-  const userArgs = args && args.length > 0 ? args : null;
-
-  switch (cliType) {
-    case "claude":
-      if (userArgs) return { command: "claude", args: userArgs };
-      if (!interactive) {
-        return {
-          command: "claude",
-          args: initialPrompt ? ["--print", initialPrompt] : ["--print"]
-        };
-      }
-      return {
-        command: "claude",
-        args: initialPrompt ? [initialPrompt] : []
-      };
-    case "gemini":
-      return { 
-        command: "gemini", 
-        args: userArgs ?? (initialPrompt ? [initialPrompt] : []) 
-      };
-    case "antigravity":
-    case "agy":
-      return { 
-        command: "agy", 
-        args: userArgs ?? (initialPrompt ? [initialPrompt] : []) 
-      };
-    case "shell":
-      return IS_WIN
-        ? { command: "cmd.exe", args: userArgs ?? (initialPrompt ? ["/c", initialPrompt] : []) }
-        : { command: "bash", args: userArgs ?? (initialPrompt ? ["-c", initialPrompt] : []) };
-    case "custom":
-      if (!command) throw new Error("cli_type 'custom' requires a 'command'.");
-      return { command, args: args ?? [] };
-    default:
-      throw new Error(`Unknown cli_type: ${cliType}`);
-  }
-}
-
-/**
- * Resolve a bare command name to an on-disk executable. On Windows the
- * install is frequently a .cmd/.exe shim on PATH (e.g. claude.cmd), which
- * ConPTY needs spelled out. Returns the original name if nothing is found
- * (node-pty will then do its own resolution / surface a spawn error).
- */
-function resolveCommand(command: string): string {
-  if (command.includes("/") || command.includes("\\")) return command; // explicit path
-  if (!IS_WIN) return command;
-
-  const pathDirs = (process.env.PATH ?? "").split(delimiter).filter(Boolean);
-  const exts = (process.env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD")
-    .split(";")
-    .filter(Boolean);
-
-  for (const dir of pathDirs) {
-    for (const ext of exts) {
-      const candidate = join(dir, command + ext);
-      if (existsSync(candidate)) return candidate;
-    }
-    const bare = join(dir, command);
-    if (existsSync(bare)) return bare;
-  }
-  return command;
-}
-
-/**
- * Drop env vars whose value is an obvious unfilled placeholder (e.g. a stray
- * ANTHROPIC_API_KEY="your-api-key-here" that would override real OAuth creds and
- * break the spawned CLI). Placeholders should never be propagated to children.
- */
-const PLACEHOLDER_VALUE = /^(your[-_].*[-_]here|change[-_]?me|placeholder|x{3,}|<.*>|todo)$/i;
-
-function scrubEnv(env: NodeJS.ProcessEnv): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(env)) {
-    if (value === undefined) continue;
-    if (PLACEHOLDER_VALUE.test(value.trim())) continue;
-    out[key] = value;
-  }
-  return out;
-}
-
-const TAIL_WINDOW_CHARS = 512;
-
-function appendToBuffer(session: CLISession, data: string): void {
-  session.buffer += data;
-  if (session.buffer.length > MAX_BUFFER_CHARS) {
-    session.buffer = session.buffer.slice(session.buffer.length - MAX_BUFFER_CHARS);
-  }
-  const plainChunk = stripAnsi(data);
-  session.recentTail = (session.recentTail + plainChunk).slice(-TAIL_WINDOW_CHARS);
-}
+const CONSUMER_ID = `mcp-${uuidv4().slice(0, 8)}`;
+const helm = new HelmClient();
 
 const TOOLS: Tool[] = [
   {
     name: "spawn_cli_session",
     description:
-      "Spawn a new interactive CLI session inside a PTY. Use cli_type 'claude' or 'gemini' for the known AI CLIs, 'shell' for a one-off command, or 'custom' with an explicit command/args. Returns a session_id used by the other tools.",
+      "Spawn a new persistent interactive CLI session inside the cli2cli-helm PTY daemon. Use cli_type 'claude', 'gemini', 'antigravity'/'agy' for known AI CLIs, 'shell' for a shell command, or 'custom' with an explicit command/args. Returns session_id and slot.",
     inputSchema: {
       type: "object",
       properties: {
@@ -183,11 +42,11 @@ const TOOLS: Tool[] = [
         initial_prompt: {
           type: "string",
           description:
-            "Initial prompt/instruction (claude/gemini) or command line (shell). Optional for custom."
+            "Initial prompt/instruction (claude/gemini/agy) or command line (shell). Optional for custom."
         },
         working_dir: {
           type: "string",
-          description: "Working directory for the session. Defaults to the server CWD."
+          description: "Working directory for the session. Defaults to the caller/daemon CWD."
         },
         command: {
           type: "string",
@@ -200,7 +59,12 @@ const TOOLS: Tool[] = [
         },
         interactive: {
           type: "boolean",
-          description: "Keep session interactive (default true). Set false for one-shot --print mode on claude."
+          description:
+            "Keep session interactive (default true). Set false for one-shot --print mode on claude."
+        },
+        slot: {
+          type: "number",
+          description: "Optional preferred slot number (1..8)."
         }
       },
       required: ["cli_type"]
@@ -209,11 +73,23 @@ const TOOLS: Tool[] = [
   {
     name: "read_cli_stream",
     description:
-      "Drain and return unread output from a session's PTY, plus whether it is waiting on an interactive (HITL) prompt and whether it has exited.",
+      "Non-destructively read output from a session's PTY ring buffer, plus its 4-state status (WORKING, BLOCKED, IDLE, EXITED), whether it is waiting on an interactive (HITL) prompt, and next_cursor.",
     inputSchema: {
       type: "object",
       properties: {
-        session_id: { type: "string", description: "Active session id." }
+        session_id: {
+          type: "string",
+          description: "Active session UUID or slot number (e.g. '1')."
+        },
+        cursor: {
+          type: "number",
+          description:
+            "Optional character offset cursor from a previous read_cli_stream call. Omit to read unread output since this MCP client's last read."
+        },
+        tail_chars: {
+          type: "number",
+          description: "Optional: peek at the last N characters of the session buffer."
+        }
       },
       required: ["session_id"]
     }
@@ -221,11 +97,14 @@ const TOOLS: Tool[] = [
   {
     name: "write_cli_input",
     description:
-      "Write text to a session's stdin (a newline is appended). Use for confirmations (y/n), answers, or follow-up prompts. Clears the waiting-for-input flag.",
+      "Write text to a session's stdin (a newline is appended by default). Use for confirmations (y/n), answers, or follow-up prompts. Clears the BLOCKED / waiting-for-input state.",
     inputSchema: {
       type: "object",
       properties: {
-        session_id: { type: "string", description: "Active session id." },
+        session_id: {
+          type: "string",
+          description: "Active session UUID or slot number (e.g. '1')."
+        },
         input_text: { type: "string", description: "Raw text to send (newline auto-appended)." },
         append_newline: {
           type: "boolean",
@@ -236,8 +115,44 @@ const TOOLS: Tool[] = [
     }
   },
   {
+    name: "wait_cli_session",
+    description:
+      "Event-driven wait: blocks until the target session transitions to one of the requested states ('blocked', 'idle', 'exited') or emits output matching a regex 'pattern'. Eliminates polling loops.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        session_id: {
+          type: "string",
+          description: "Active session UUID or slot number (e.g. '1')."
+        },
+        until: {
+          type: "array",
+          items: {
+            type: "string",
+            enum: ["blocked", "waiting_for_input", "idle", "exited", "pattern"]
+          },
+          description: "Conditions that resolve the wait (default: ['blocked', 'idle', 'exited'])."
+        },
+        pattern: {
+          type: "string",
+          description: "Optional regex pattern to match against recent output."
+        },
+        timeout_ms: {
+          type: "number",
+          description: "Maximum time to wait in milliseconds (default 60000)."
+        },
+        cursor: {
+          type: "number",
+          description: "Optional read cursor to return output accumulated since that offset."
+        }
+      },
+      required: ["session_id"]
+    }
+  },
+  {
     name: "list_cli_sessions",
-    description: "List all known sessions with their type, cwd, waiting/exited state.",
+    description:
+      "List all active and exited sessions in the cli2cli-helm daemon with their slot, type, cwd, 4-state (WORKING, BLOCKED, IDLE, EXITED), and uptime.",
     inputSchema: { type: "object", properties: {} }
   },
   {
@@ -246,7 +161,10 @@ const TOOLS: Tool[] = [
     inputSchema: {
       type: "object",
       properties: {
-        session_id: { type: "string", description: "Active session id." }
+        session_id: {
+          type: "string",
+          description: "Active session UUID or slot number (e.g. '1')."
+        }
       },
       required: ["session_id"]
     }
@@ -254,7 +172,7 @@ const TOOLS: Tool[] = [
 ];
 
 const server = new Server(
-  { name: "cli2cli-bridge", version: "0.1.0" },
+  { name: "cli2cli-bridge", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -271,120 +189,54 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (name) {
       case "spawn_cli_session": {
-        const cliType = String(args.cli_type);
-        const initialPrompt = args.initial_prompt ? String(args.initial_prompt) : "";
-        const cwd = args.working_dir ? String(args.working_dir) : process.cwd();
-        const interactive = args.interactive !== false;
-
-        const preset = resolvePreset(
-          cliType,
-          initialPrompt,
-          args.command ? String(args.command) : undefined,
-          Array.isArray(args.args) ? (args.args as string[]) : undefined,
-          interactive
-        );
-        const command = resolveCommand(preset.command);
-
-        const proc = pty.spawn(command, preset.args, {
-          name: "xterm-256color",
-          cols: 120,
-          rows: 40,
-          cwd,
-          env: scrubEnv(process.env)
+        const res = await helm.request("session.spawn", {
+          ...args,
+          working_dir: args.working_dir ?? process.cwd()
         });
-
-        const sessionId = uuidv4();
-        const session: CLISession = {
-          id: sessionId,
-          cliType,
-          command,
-          args: preset.args,
-          cwd,
-          process: proc,
-          buffer: "",
-          recentTail: "",
-          isWaitingForInput: false,
-          exitCode: null,
-          startedAt: Date.now()
-        };
-
-        proc.onData((data) => {
-          appendToBuffer(session, data);
-          if (HITL_PROMPT_PATTERN.test(session.recentTail)) {
-            session.isWaitingForInput = true;
-          }
-        });
-        proc.onExit(({ exitCode }) => {
-          session.exitCode = exitCode;
-          session.isWaitingForInput = false;
-        });
-
-        sessions.set(sessionId, session);
-
-        return ok({
-          status: "SPAWNED",
-          session_id: sessionId,
-          cli_type: cliType,
-          command,
-          working_dir: cwd
-        });
+        return ok(res);
       }
 
       case "read_cli_stream": {
-        const session = sessions.get(String(args.session_id));
-        if (!session) throw new Error(`Session ${args.session_id} not found.`);
-
-        const output = session.buffer;
-        session.buffer = "";
-
-        return ok({
-          session_id: session.id,
-          output,
-          is_waiting_for_input: session.isWaitingForInput,
-          is_exited: session.exitCode !== null,
-          exit_code: session.exitCode
+        const res = await helm.request("session.read", {
+          session_id: String(args.session_id),
+          cursor: typeof args.cursor === "number" ? args.cursor : undefined,
+          tail_chars: typeof args.tail_chars === "number" ? args.tail_chars : undefined,
+          consumer_id: CONSUMER_ID
         });
+        return ok(res);
       }
 
       case "write_cli_input": {
-        const session = sessions.get(String(args.session_id));
-        if (!session) throw new Error(`Session ${args.session_id} not found.`);
-        if (session.exitCode !== null) throw new Error(`Session ${session.id} has already exited.`);
+        const res = await helm.request("session.write", {
+          session_id: String(args.session_id),
+          input_text: String(args.input_text ?? ""),
+          append_newline: args.append_newline !== false
+        });
+        return ok(res);
+      }
 
-        const text = String(args.input_text ?? "");
-        const appendNewline = args.append_newline !== false;
-        session.process.write(appendNewline ? `${text}\r` : text);
-        session.isWaitingForInput = false;
-        session.recentTail = "";
-
-        return ok({ status: "INPUT_SENT", session_id: session.id });
+      case "wait_cli_session": {
+        const res = await helm.request("session.wait", {
+          session_id: String(args.session_id),
+          until: Array.isArray(args.until) ? args.until : undefined,
+          pattern: typeof args.pattern === "string" ? args.pattern : undefined,
+          timeout_ms: typeof args.timeout_ms === "number" ? args.timeout_ms : undefined,
+          cursor: typeof args.cursor === "number" ? args.cursor : undefined,
+          consumer_id: CONSUMER_ID
+        });
+        return ok(res);
       }
 
       case "list_cli_sessions": {
-        return ok({
-          sessions: [...sessions.values()].map((s) => ({
-            session_id: s.id,
-            cli_type: s.cliType,
-            command: s.command,
-            working_dir: s.cwd,
-            is_waiting_for_input: s.isWaitingForInput,
-            is_exited: s.exitCode !== null,
-            exit_code: s.exitCode,
-            uptime_ms: Date.now() - s.startedAt
-          }))
-        });
+        const res = await helm.request("session.list", {});
+        return ok(res);
       }
 
       case "terminate_cli_session": {
-        const session = sessions.get(String(args.session_id));
-        if (!session) throw new Error(`Session ${args.session_id} not found.`);
-        try {
-          session.process.kill();
-        } catch {
-          /* already dead */
-        }
-        sessions.delete(session.id);
-        return ok({ status: "TERMINATED", session_id: session.id });
+        const res = await helm.request("session.terminate", {
+          session_id: String(args.session_id)
+        });
+        return ok(res);
       }
 
       default:
@@ -397,10 +249,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function run(): Promise<void> {
+  await helm.ensureConnected();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  // stderr is safe for logs; stdout is the MCP transport.
-  process.stderr.write("[cli2cli-mcp] bridge online (stdio)\n");
+  process.stderr.write("[cli2cli-mcp] connected to helm-daemon & online (stdio)\n");
 }
 
 run().catch((err) => {

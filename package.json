@@ -1,12 +1,15 @@
 {
   "name": "cli2cli-mcp",
-  "version": "0.1.0",
-  "description": "Bi-directional MCP bridge for driving headless interactive AI CLIs (Claude Code, Gemini) over a PTY.",
+  "version": "0.2.0",
+  "description": "Bi-directional MCP bridge and persistent agent-native terminal multiplexer (cli2cli-helm) over a PTY.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "cli2cli-mcp": "dist/index.js",
-    "cli2cli-nucleus": "dist/nucleus.js"
+    "cli2cli-helm": "dist/nucleus.js",
+    "cli2cli-daemon": "dist/helm-daemon.js",
+    "cli2cli-nucleus": "dist/nucleus.js",
+    "c2c": "dist/nucleus.js"
   },
   "files": [
     "dist",
@@ -15,6 +18,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "daemon": "node dist/helm-daemon.js",
+    "helm": "node dist/nucleus.js",
+    "demo": "node dist/nucleus.js demo",
     "nucleus": "node dist/nucleus.js",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build"
