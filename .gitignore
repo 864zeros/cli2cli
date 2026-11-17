@@ -12,6 +12,7 @@ npm-debug.log*
 # env / secrets
 .env
 .env.*
+.mcp-token
 
 # os / editor cruft
 .DS_Store

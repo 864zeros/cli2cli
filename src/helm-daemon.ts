@@ -146,10 +146,18 @@ export function resolvePreset(
         command: "agy",
         args: userArgs ?? (initialPrompt ? [initialPrompt] : [])
       };
-    case "shell":
-      return IS_WIN
-        ? { command: "cmd.exe", args: userArgs ?? (initialPrompt ? ["/c", initialPrompt] : []) }
-        : { command: "bash", args: userArgs ?? (initialPrompt ? ["-c", initialPrompt] : []) };
+    case "shell": {
+      if (!IS_WIN) {
+        return { command: "bash", args: userArgs ?? (initialPrompt ? ["-c", initialPrompt] : []) };
+      }
+      if (!userArgs && initialPrompt && /\b(Copy-Item|Get-|Set-|Invoke-|New-Item|Remove-Item|Select-|Where-Object|ForEach-Object|\$env:)/i.test(initialPrompt)) {
+        return {
+          command: "powershell.exe",
+          args: ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", initialPrompt]
+        };
+      }
+      return { command: "cmd.exe", args: userArgs ?? (initialPrompt ? ["/c", initialPrompt] : []) };
+    }
     case "custom":
       if (!command) throw new Error("cli_type 'custom' requires a 'command'.");
       return { command, args: args ?? [] };
@@ -431,6 +439,49 @@ export class HelmDaemon {
     return this.toSummary(session);
   }
 
+  public spawnFleet(params: {
+    sessions?: Array<{
+      cli_type: string;
+      initial_prompt?: string;
+      working_dir?: string;
+      command?: string;
+      args?: string[];
+      interactive?: boolean;
+      slot?: number;
+      cols?: number;
+      rows?: number;
+    }>;
+    count?: number;
+    cli_type?: string;
+    initial_prompt?: string;
+    working_dir?: string;
+    command?: string;
+    args?: string[];
+    interactive?: boolean;
+  }): { status: string; count: number; sessions: SessionSummary[] } {
+    const specs = Array.isArray(params.sessions) && params.sessions.length > 0
+      ? params.sessions
+      : Array.from({ length: Math.max(1, Math.min(Number(params.count ?? 1), 64)) }, () => ({
+          cli_type: String(params.cli_type ?? "shell"),
+          initial_prompt: params.initial_prompt,
+          working_dir: params.working_dir,
+          command: params.command,
+          args: params.args,
+          interactive: params.interactive
+        }));
+
+    const spawned: SessionSummary[] = [];
+    for (const spec of specs) {
+      spawned.push(this.spawnSession(spec));
+    }
+
+    return {
+      status: "FLEET_SPAWNED",
+      count: spawned.length,
+      sessions: spawned
+    };
+  }
+
   /**
    * Non-destructive read from the session's ring buffer.
    * - If `cursor` (number) is provided, reads from that exact byte/char offset to `writeCursor`.
@@ -671,6 +722,8 @@ export class HelmDaemon {
           status: "SPAWNED",
           ...this.spawnSession(params as Parameters<HelmDaemon["spawnSession"]>[0])
         };
+      case "session.spawn_fleet":
+        return this.spawnFleet(params as Parameters<HelmDaemon["spawnFleet"]>[0]);
       case "session.read":
         return this.readSession(params as Parameters<HelmDaemon["readSession"]>[0]);
       case "session.write":

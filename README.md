@@ -21,16 +21,17 @@ Read the full architectural specifications, comparative analyses, and benchmarks
 - **Open-Source 3-Pillar Stack:** Combines `cli2cli-helm` (local multiplexer + `c2c` CLI), `cli2cli-mcp` (6-tool MCP server), and `cli2cli-aoe` (outward mobile HITL command center & SSE dashboard).
 - **Zero Token Overhead:** $0.00 external orchestration cost; agents run on host hardware.
 
-## Tools (v0.2.0 — 6 Primitives)
+## Tools (v0.2.0 — 7 Primitives)
 
 | Tool | Purpose |
 |------|---------|
-| `spawn_cli_session` | Allocate a persistent PTY slot and launch a CLI (`claude` / `gemini` / `agy` / `shell` / `custom`). Injects `HELM_SLOT` & `HELM_PIPE` (`Helm Link`). |
+| `spawn_cli_session` | Allocate a persistent PTY slot (`1..N`, unlimited) and launch a CLI (`claude` / `gemini` / `agy` / `shell` / `custom`). Injects `HELM_SLOT` & `HELM_PIPE` (`Helm Link`). |
+| `spawn_cli_fleet` | Spawn any number of concurrent CLI terminal sessions in parallel in a single call (via a `sessions` array or `count` + template). |
 | `read_cli_stream` | Non-destructively read PTY output from cursor/consumer offset; report 4-state (`WORKING`, `BLOCKED`, `IDLE`, `EXITED`) and `next_cursor`. |
 | `write_cli_input` | Feed stdin — confirmations (`y`/`n`), answers, follow-up prompts. Clears `BLOCKED` state. |
 | `wait_cli_session` | Event-driven block until session reaches `blocked`, `idle`, `exited`, or matches a regex `pattern` (eliminates polling loops). |
 | `list_cli_sessions` | Enumerate live and exited sessions across `helm-daemon`. |
-| `terminate_cli_session` | Kill a session and free resources. |
+| `terminate_cli_session` | Kill a session (or pass `session_id: "all"` to terminate all sessions) and free resources. |
 
 ### HITL detection
 `read_cli_stream` flips `is_waiting_for_input` to `true` when the output stream matches a
@@ -45,7 +46,21 @@ npm install      # builds node-pty against your Node ABI (needs build tools on W
 npm run build    # tsc -> dist/
 ```
 
-## Register as an MCP server
+## Register in SAP Joule Work Desktop (Port `3052`)
+
+`cli2cli-mcp` includes a native **Streamable HTTP + RFC 7591 Dynamic Client Registration + RFC 7636 OAuth 2.0 PKCE Gateway** ([src/joule-server.ts](src/joule-server.ts)) and is also registered on **Port `3052`** in `ce3-mcp-joule-bridge`:
+
+```sh
+npm run build
+npm run joule              # starts http://localhost:3052 (shares .mcp-token)
+node scripts/smoke-joule.mjs
+```
+
+1. Open **SAP Joule Work Desktop** $\rightarrow$ **Extensions** $\rightarrow$ **Connectors** $\rightarrow$ **+ New** $\rightarrow$ **Add Connector**.
+2. Set **Name:** `CLI2CLI Multi-Terminal MCP` and **URL:** `http://localhost:3052` (leave Client ID / Secret blank).
+3. Click **Add** and toggle the connector **ON** in your conversation.
+
+## Register as a `stdio` MCP server
 
 **Claude Code** (this repo's target driver):
 

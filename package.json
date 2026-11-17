@@ -6,6 +6,7 @@
   "main": "dist/index.js",
   "bin": {
     "cli2cli-mcp": "dist/index.js",
+    "cli2cli-joule": "dist/joule-server.js",
     "cli2cli-helm": "dist/nucleus.js",
     "cli2cli-daemon": "dist/helm-daemon.js",
     "cli2cli-nucleus": "dist/nucleus.js",
@@ -18,6 +19,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "joule": "node dist/joule-server.js",
     "daemon": "node dist/helm-daemon.js",
     "helm": "node dist/nucleus.js",
     "demo": "node dist/nucleus.js demo",
